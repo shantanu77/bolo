@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import fs from 'fs'
 import path from 'path'
+import { logUsage } from './usage'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -134,6 +135,14 @@ Scoring guide: 1=poor, 2=needs work, 3=acceptable, 4=good, 5=excellent. Most res
     temperature: 0.3,
   })
 
+  logUsage({
+    callType: 'evaluation',
+    model:    'gpt-4o',
+    promptTokens:     response.usage?.prompt_tokens     ?? 0,
+    completionTokens: response.usage?.completion_tokens ?? 0,
+    totalTokens:      response.usage?.total_tokens      ?? 0,
+  })
+
   const raw = JSON.parse(response.choices[0].message.content || '{}') as EvaluationResult
   const s   = raw.scores
   raw.overall = Math.round((s.clarity + s.fluency + s.vocabulary + s.structure + s.confidence + s.tone_match) / 6 * 20)
@@ -154,6 +163,8 @@ export async function generateTTS(text: string, _sessionId: string, attemptId: s
     input:  text,
     speed:  0.95,
   })
+
+  logUsage({ callType: 'tts', model: 'tts-1', units: text.length })
 
   const buffer = Buffer.from(await response.arrayBuffer())
   fs.writeFileSync(filePath, buffer)

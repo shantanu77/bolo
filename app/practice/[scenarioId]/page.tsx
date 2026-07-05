@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 type Phase = 'loading' | 'ready' | 'recording' | 'processing' | 'feedback' | 'error'
+type ProcessingStep = 'transcribing' | 'evaluating' | 'saving'
 
 interface Scenario {
   id: string; title: string; context: string; question: string
@@ -12,11 +13,25 @@ interface Scenario {
 }
 interface EvalResult {
   scores: { clarity: number; fluency: number; vocabulary: number; structure: number; confidence: number; tone_match: number }
+  dimension_evidence?: Record<string, DimensionEvidence>
   overall: number
   what_worked: string
   improvement_focus: string
   model_response: string
+  voice_summary?: {
+    strengths: string
+    priority_fix: string
+    polished_version: string
+    next_practice: string
+  }
   coach_note?: string
+}
+interface DimensionEvidence {
+  score: number
+  verdict: string
+  evidence: string[]
+  impact: string
+  fix: string
 }
 interface AttemptResult {
   evaluation: EvalResult
@@ -68,6 +83,7 @@ function PracticeSessionContent() {
   const [result, setResult]           = useState<AttemptResult | null>(null)
   const [isPlayingTTS, setIsPlayingTTS] = useState(false)
   const [recordingSec, setRecordingSec] = useState(0)
+  const [processingStep, setProcessingStep] = useState<ProcessingStep>('transcribing')
   const [errorMsg, setErrorMsg] = useState('')
 
   const mediaRef    = useRef<MediaRecorder | null>(null)
@@ -132,6 +148,7 @@ function PracticeSessionContent() {
     const dur = (Date.now() - startTimeRef.current) / 1000
 
     try {
+      setProcessingStep('transcribing')
       const stData = await fetchJson('/api/stream', {
         method: 'POST',
         body: blob,
@@ -142,6 +159,7 @@ function PracticeSessionContent() {
       setFillerWords(stData.fillerWords)
       setWpm(stData.wpm)
 
+      setProcessingStep('evaluating')
       const evData = await fetchJson('/api/session/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -153,6 +171,7 @@ function PracticeSessionContent() {
           durationSec: dur,
         }),
       })
+      setProcessingStep('saving')
       setResult(evData)
       setPhase('feedback')
     } catch (err) {
@@ -254,8 +273,12 @@ function PracticeSessionContent() {
       {phase === 'processing' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 text-center">
           <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Analysing your response…</p>
-          <p className="text-xs text-gray-400 mt-1">Transcribing → Evaluating → Generating feedback</p>
+          <p className="text-gray-700 font-semibold">Analysing your response</p>
+          <div className="mt-5 max-w-sm mx-auto text-left space-y-3">
+            <ProcessingRow active={processingStep === 'transcribing'} done={processingStep !== 'transcribing'} label="Transcribing your audio" />
+            <ProcessingRow active={processingStep === 'evaluating'} done={processingStep === 'saving'} label="Checking clarity, fluency, tone, and confidence" />
+            <ProcessingRow active={processingStep === 'saving'} done={false} label="Preparing written feedback and voice summary" />
+          </div>
         </div>
       )}
 
@@ -306,6 +329,18 @@ function PracticeSessionContent() {
             </div>
           </div>
 
+          {result.evaluation.dimension_evidence && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+              <h3 className="font-semibold text-gray-800 mb-1">Score Evidence</h3>
+              <p className="text-xs text-gray-400 mb-4">Each score is tied to what you actually said and how it affected the result.</p>
+              <div className="space-y-3">
+                {Object.entries(result.evaluation.dimension_evidence).map(([key, item]) => (
+                  <EvidenceCard key={key} label={DIM_LABELS[key]} item={item} />
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <h3 className="font-semibold text-gray-800 mb-4">Feedback</h3>
             <div className="space-y-4">
@@ -334,12 +369,20 @@ function PracticeSessionContent() {
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-800">Model Response</h3>
+              <h3 className="font-semibold text-gray-800">AI Voice Summary</h3>
               <button onClick={playTTS} disabled={isPlayingTTS}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition">
                 {isPlayingTTS ? '🔊 Playing…' : '▶ Listen'}
               </button>
             </div>
+            {result.evaluation.voice_summary && (
+              <div className="grid gap-2 mb-4">
+                <SummaryItem label="Strength" text={result.evaluation.voice_summary.strengths} tone="green" />
+                <SummaryItem label="Priority fix" text={result.evaluation.voice_summary.priority_fix} tone="orange" />
+                <SummaryItem label="Next practice" text={result.evaluation.voice_summary.next_practice} tone="indigo" />
+              </div>
+            )}
+            <div className="text-xs font-semibold text-gray-500 mb-2">Polished version</div>
             <p className="text-sm text-gray-700 leading-relaxed italic border-l-4 border-indigo-300 pl-4">
               &quot;{result.evaluation.model_response}&quot;
             </p>
@@ -364,7 +407,10 @@ function PracticeSessionContent() {
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="text-xs font-semibold text-gray-500 mb-2">Your response (transcript)</div>
-            <p className="text-sm text-gray-700 leading-relaxed">{transcript}</p>
+            <HighlightedTranscript
+              transcript={transcript}
+              evidence={Object.values(result.evaluation.dimension_evidence ?? {}).flatMap(item => item.evidence ?? [])}
+            />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -379,6 +425,103 @@ function PracticeSessionContent() {
         </div>
       )}
     </div>
+  )
+}
+
+function ProcessingRow({ active, done, label }: { active: boolean; done: boolean; label: string }) {
+  return (
+    <div className={`flex items-center gap-3 rounded-xl px-3 py-2 ${active ? 'bg-indigo-50 text-indigo-700' : done ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'}`}>
+      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${active ? 'bg-indigo-600 text-white animate-pulse' : done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+        {done ? '✓' : active ? '…' : ''}
+      </span>
+      <span className="text-sm font-medium">{label}</span>
+    </div>
+  )
+}
+
+function EvidenceCard({ label, item }: { label: string; item: DimensionEvidence }) {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div>
+          <div className="text-sm font-semibold text-gray-800">{label}</div>
+          <div className="text-xs text-gray-500 mt-0.5">{item.verdict}</div>
+        </div>
+        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-indigo-700 border border-indigo-100">{item.score}/5</span>
+      </div>
+      {item.evidence?.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {item.evidence.map(quote => (
+            <span key={quote} className="rounded-md bg-yellow-100 px-2 py-1 text-xs text-yellow-800">
+              &quot;{quote}&quot;
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="rounded-lg bg-white p-3">
+          <div className="text-xs font-semibold text-gray-400 mb-1">What went wrong</div>
+          <p className="text-xs text-gray-700 leading-relaxed">{item.impact}</p>
+        </div>
+        <div className="rounded-lg bg-white p-3">
+          <div className="text-xs font-semibold text-gray-400 mb-1">How to fix it</div>
+          <p className="text-xs text-gray-700 leading-relaxed">{item.fix}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SummaryItem({ label, text, tone }: { label: string; text: string; tone: 'green' | 'orange' | 'indigo' }) {
+  const tones = {
+    green: 'bg-green-50 text-green-700 border-green-100',
+    orange: 'bg-orange-50 text-orange-700 border-orange-100',
+    indigo: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+  }
+  return (
+    <div className={`rounded-lg border px-3 py-2 ${tones[tone]}`}>
+      <span className="text-xs font-bold uppercase tracking-wide">{label}: </span>
+      <span className="text-sm">{text}</span>
+    </div>
+  )
+}
+
+function HighlightedTranscript({ transcript, evidence }: { transcript: string; evidence: string[] }) {
+  const quotes = evidence
+    .map(q => q.trim())
+    .filter(q => q.length >= 3 && transcript.toLowerCase().includes(q.toLowerCase()))
+
+  if (!quotes.length) {
+    return <p className="text-sm text-gray-700 leading-relaxed">{transcript}</p>
+  }
+
+  const parts: Array<{ text: string; highlight: boolean }> = [{ text: transcript, highlight: false }]
+
+  quotes.forEach(quote => {
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i]
+      if (part.highlight) continue
+      const idx = part.text.toLowerCase().indexOf(quote.toLowerCase())
+      if (idx === -1) continue
+      parts.splice(
+        i,
+        1,
+        { text: part.text.slice(0, idx), highlight: false },
+        { text: part.text.slice(idx, idx + quote.length), highlight: true },
+        { text: part.text.slice(idx + quote.length), highlight: false },
+      )
+      break
+    }
+  })
+
+  return (
+    <p className="text-sm text-gray-700 leading-relaxed">
+      {parts.filter(p => p.text).map((part, i) => part.highlight ? (
+        <mark key={i} className="rounded bg-yellow-100 px-1 text-yellow-900">{part.text}</mark>
+      ) : (
+        <span key={i}>{part.text}</span>
+      ))}
+    </p>
   )
 }
 

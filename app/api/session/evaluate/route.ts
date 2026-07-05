@@ -60,10 +60,11 @@ export async function POST(req: NextRequest) {
   const fillerCount = Object.values(fillerWords).reduce((a: number, b) => a + (b as number), 0)
 
   const ttsText = [
-    evaluation.what_worked,
-    `Now, here is one thing to work on: ${evaluation.improvement_focus}`,
-    `Here is how you could have said that: ${evaluation.model_response}`,
-    evaluation.coach_note ? `One more tip: ${evaluation.coach_note}` : '',
+    evaluation.voice_summary?.strengths ?? evaluation.what_worked,
+    evaluation.voice_summary?.priority_fix ?? `One thing to work on: ${evaluation.improvement_focus}`,
+    evaluation.voice_summary?.polished_version ?? 'Here is how you could have said that:',
+    evaluation.model_response,
+    evaluation.voice_summary?.next_practice ?? evaluation.coach_note ?? '',
   ].filter(Boolean).join(' ')
 
   const [ttsPath, ,] = await Promise.all([

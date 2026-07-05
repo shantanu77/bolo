@@ -14,10 +14,23 @@ export interface EvaluationResult {
     confidence:  number
     tone_match:  number
   }
+  dimension_evidence: Record<string, {
+    score: number
+    verdict: string
+    evidence: string[]
+    impact: string
+    fix: string
+  }>
   overall:           number
   what_worked:       string
   improvement_focus: string
   model_response:    string
+  voice_summary: {
+    strengths: string
+    priority_fix: string
+    polished_version: string
+    next_practice: string
+  }
   coach_note?:       string
 }
 
@@ -107,7 +120,9 @@ EVALUATION INSTRUCTIONS:
 - Focus feedback on what matters MOST for their specific communication context.
 - Do not penalise valid Indian English. Flag only what reduces clarity or is out of register.
 - Be encouraging and specific. Reference exact phrases from their response.
-- Surface AT MOST 1 improvement area. Never overwhelm.
+- Support every dimension score with evidence from the user's transcript. Quote exact short phrases where possible.
+- Make the evidence practical: what happened, why it affected the score, and what to do instead.
+- Surface one priority improvement area, but still explain each score.
 - The model_response must sound like a confident Indian professional at THEIR level — not a generic Western speaker.
 
 Return ONLY a JSON object:
@@ -120,9 +135,29 @@ Return ONLY a JSON object:
     "confidence": <1-5>,
     "tone_match": <1-5>
   },
+  "dimension_evidence": {
+    "clarity": {
+      "score": <same as scores.clarity>,
+      "verdict": "<short label such as 'Acceptable but needs sharper wording'>",
+      "evidence": ["<exact phrase or short excerpt from the response>", "..."],
+      "impact": "<what this did to clarity>",
+      "fix": "<specific correction or technique>"
+    },
+    "fluency": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "..." },
+    "vocabulary": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "..." },
+    "structure": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "..." },
+    "confidence": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "..." },
+    "tone_match": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "..." }
+  },
   "what_worked": "<one specific positive observation referencing what they said>",
   "improvement_focus": "<the single most impactful thing to improve, quoting a specific phrase they used>",
   "model_response": "<a natural, confident version of what they were trying to say — tailored to their role and the scenario's register. 3-5 sentences. Sound like THEM, just more polished.>",
+  "voice_summary": {
+    "strengths": "<1 sentence naming the strongest part>",
+    "priority_fix": "<1 sentence naming the highest priority correction with a quoted phrase>",
+    "polished_version": "<1 sentence introducing the model_response>",
+    "next_practice": "<1 sentence on what to practise next>"
+  },
   "coach_note": "<optional 1-sentence tip — only if strongly relevant. Omit if nothing extra to add.>"
 }
 
@@ -146,8 +181,33 @@ Scoring guide: 1=poor, 2=needs work, 3=acceptable, 4=good, 5=excellent. Most res
   const raw = JSON.parse(response.choices[0].message.content || '{}') as EvaluationResult
   const s   = raw.scores
   raw.overall = Math.round((s.clarity + s.fluency + s.vocabulary + s.structure + s.confidence + s.tone_match) / 6 * 20)
+  raw.dimension_evidence = normalizeEvidence(raw.dimension_evidence, s, raw.improvement_focus)
+  raw.voice_summary = raw.voice_summary ?? {
+    strengths: raw.what_worked,
+    priority_fix: raw.improvement_focus,
+    polished_version: 'Here is a clearer version of your response.',
+    next_practice: raw.coach_note ?? 'Practise the same scenario again with a sharper structure.',
+  }
 
   return raw
+}
+
+function normalizeEvidence(
+  evidence: EvaluationResult['dimension_evidence'] | undefined,
+  scores: EvaluationResult['scores'],
+  fallback: string,
+): EvaluationResult['dimension_evidence'] {
+  const labels = Object.keys(scores) as Array<keyof EvaluationResult['scores']>
+  return Object.fromEntries(labels.map(key => {
+    const item = evidence?.[key]
+    return [key, {
+      score: scores[key],
+      verdict: item?.verdict || 'Needs review',
+      evidence: Array.isArray(item?.evidence) ? item.evidence.slice(0, 3).map(String).filter(Boolean) : [],
+      impact: item?.impact || fallback,
+      fix: item?.fix || 'Use shorter, more direct sentences and connect your points clearly.',
+    }]
+  }))
 }
 
 export async function generateTTS(text: string, _sessionId: string, attemptId: string): Promise<string> {

@@ -98,11 +98,11 @@ export default function FeaturesPage() {
     <div className="bg-white text-gray-900">
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-indigo-950 to-indigo-800 text-white py-24 px-6">
+      <section className="bg-gradient-to-br from-indigo-950 to-indigo-800 text-white py-16 sm:py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <div className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-4">Everything AuraXpress does</div>
-          <h1 className="text-5xl font-bold mb-6">Features built for one thing</h1>
-          <p className="text-xl text-indigo-200 leading-relaxed">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-6">Features built for one thing</h1>
+          <p className="text-lg sm:text-xl text-indigo-200 leading-relaxed">
             Making Indian professionals sound more confident, clear, and professional in English — in the exact situations they face at work.
           </p>
         </div>
@@ -110,7 +110,7 @@ export default function FeaturesPage() {
 
       {/* Core features */}
       {CORE_FEATURES.map(f => (
-        <section key={f.id} id={f.id} className={`py-20 px-6 ${f.reversed ? 'bg-gray-50' : 'bg-white'}`}>
+        <section key={f.id} id={f.id} className={`py-14 sm:py-20 px-6 ${f.reversed ? 'bg-gray-50' : 'bg-white'}`}>
           <div className="max-w-6xl mx-auto">
             <div className={`grid md:grid-cols-2 gap-16 items-center ${f.reversed ? 'md:flex-row-reverse' : ''}`}>
               <div className={f.reversed ? 'md:order-2' : ''}>

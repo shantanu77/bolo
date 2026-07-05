@@ -53,13 +53,13 @@ export default function AboutPage() {
     <div className="bg-white text-gray-900">
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-indigo-950 to-indigo-800 text-white py-24 px-6">
+      <section className="bg-gradient-to-br from-indigo-950 to-indigo-800 text-white py-16 sm:py-24 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-4">Our story</div>
-          <h1 className="text-5xl sm:text-6xl font-bold mb-6 leading-tight">
+          <h1 className="text-4xl sm:text-6xl font-bold mb-6 leading-tight">
             We built AuraXpress because we saw the gap.
           </h1>
-          <p className="text-xl text-indigo-200 max-w-2xl leading-relaxed">
+          <p className="text-lg sm:text-xl text-indigo-200 max-w-2xl leading-relaxed">
             Some of the sharpest professionals we know — engineers, managers, founders — were being underestimated in meetings and on calls. Not because they lacked ideas. Because the way they expressed those ideas in English did not match their actual capability.
           </p>
         </div>

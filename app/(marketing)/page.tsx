@@ -104,12 +104,12 @@ export default function HomePage() {
               Built specifically for Indian professionals
             </div>
 
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight mb-6">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight mb-6">
               Speak English<br />
               <span className="text-indigo-300">like you mean it.</span>
             </h1>
 
-            <p className="text-xl text-indigo-200 max-w-xl leading-relaxed mb-10">
+            <p className="text-lg sm:text-xl text-indigo-200 max-w-xl leading-relaxed mb-10">
               AuraXpress listens to you speak, evaluates your response, and plays back a better version — tailored to your job, your industry, and your communication goals.
             </p>
 

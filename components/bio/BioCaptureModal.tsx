@@ -164,7 +164,7 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
                 <p className="text-sm text-gray-700 leading-relaxed">{structured.summary}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-xs">
                 {[
                   { label: 'Role',       value: structured.current_role },
                   { label: 'Seniority',  value: structured.seniority },

@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS attempts (
   score_overall       INT,
   feedback_text       TEXT,
   model_response      TEXT,
+  evaluation_json     JSON,
   tts_audio_path      VARCHAR(512),
   xp_earned           INT NOT NULL DEFAULT 0,
   created_at          DATETIME NOT NULL DEFAULT NOW(),

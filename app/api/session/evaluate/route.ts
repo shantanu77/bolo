@@ -72,14 +72,16 @@ export async function POST(req: NextRequest) {
     execute(
       `INSERT INTO attempts (id, session_id, user_id, transcript, duration_sec, words_per_minute,
        filler_word_count, filler_words, score_clarity, score_fluency, score_vocabulary,
-       score_structure, score_confidence, score_tone, score_overall, feedback_text, model_response)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       score_structure, score_confidence, score_tone, score_overall, feedback_text, model_response,
+       evaluation_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         attemptId, sessionId, session.user.id, transcript, durationSec, wpm,
         fillerCount, JSON.stringify(fillerWords),
         evaluation.scores.clarity, evaluation.scores.fluency, evaluation.scores.vocabulary,
         evaluation.scores.structure, evaluation.scores.confidence, evaluation.scores.tone_match,
         evaluation.overall, evaluation.improvement_focus, evaluation.model_response,
+        JSON.stringify(evaluation),
       ]
     ),
     execute(

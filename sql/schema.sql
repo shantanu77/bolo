@@ -63,8 +63,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   last_score      INT,
   started_at      DATETIME NOT NULL DEFAULT NOW(),
   ended_at        DATETIME,
-  FOREIGN KEY (user_id)     REFERENCES users(id)     ON DELETE CASCADE,
-  FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id)     REFERENCES users(id)     ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS attempts (

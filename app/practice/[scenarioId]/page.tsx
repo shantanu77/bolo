@@ -82,6 +82,11 @@ function PracticeSessionContent() {
   const [wpm, setWpm]                 = useState(0)
   const [result, setResult]           = useState<AttemptResult | null>(null)
   const [isPlayingTTS, setIsPlayingTTS] = useState(false)
+  const [isPlayingRecording, setIsPlayingRecording] = useState(false)
+  const [recordingUrl, setRecordingUrl] = useState('')
+  const [recordingCurrent, setRecordingCurrent] = useState(0)
+  const [recordingDuration, setRecordingDuration] = useState(0)
+  const [recordingSpeed, setRecordingSpeed] = useState(1)
   const [recordingSec, setRecordingSec] = useState(0)
   const [processingStep, setProcessingStep] = useState<ProcessingStep>('transcribing')
   const [errorMsg, setErrorMsg] = useState('')
@@ -91,6 +96,13 @@ function PracticeSessionContent() {
   const timerRef    = useRef<NodeJS.Timeout | null>(null)
   const startTimeRef = useRef<number>(0)
   const audioRef    = useRef<HTMLAudioElement | null>(null)
+  const recordingAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (recordingUrl) URL.revokeObjectURL(recordingUrl)
+    }
+  }, [recordingUrl])
 
   useEffect(() => {
     fetchJson('/api/session/start', {
@@ -146,6 +158,11 @@ function PracticeSessionContent() {
 
     const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
     const dur = (Date.now() - startTimeRef.current) / 1000
+    if (recordingUrl) URL.revokeObjectURL(recordingUrl)
+    setRecordingUrl(URL.createObjectURL(blob))
+    setRecordingCurrent(0)
+    setRecordingDuration(dur)
+    setIsPlayingRecording(false)
 
     try {
       setProcessingStep('transcribing')
@@ -189,13 +206,43 @@ function PracticeSessionContent() {
     audio.onended = () => setIsPlayingTTS(false)
   }
 
+  function toggleRecordingPlayback() {
+    const audio = recordingAudioRef.current
+    if (!audio) return
+
+    audio.playbackRate = recordingSpeed
+    if (audio.paused) {
+      audio.play()
+      setIsPlayingRecording(true)
+    } else {
+      audio.pause()
+      setIsPlayingRecording(false)
+    }
+  }
+
+  function seekRecording(sec: number) {
+    const audio = recordingAudioRef.current
+    if (!audio) return
+    const next = Math.max(0, Math.min(sec, recordingDuration || audio.duration || 0))
+    audio.currentTime = next
+    setRecordingCurrent(next)
+  }
+
+  function changeRecordingSpeed(speed: number) {
+    setRecordingSpeed(speed)
+    if (recordingAudioRef.current) recordingAudioRef.current.playbackRate = speed
+  }
+
   function tryAgain() {
+    recordingAudioRef.current?.pause()
     setPhase('ready')
     setTranscript('')
     setFillerWords({})
     setWpm(0)
     setResult(null)
     setRecordingSec(0)
+    setRecordingCurrent(0)
+    setIsPlayingRecording(false)
   }
 
   if (phase === 'loading') {
@@ -387,6 +434,64 @@ function PracticeSessionContent() {
               &quot;{result.evaluation.model_response}&quot;
             </p>
           </div>
+
+          {recordingUrl && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+              <h3 className="font-semibold text-gray-800 mb-3">Your Recording</h3>
+              <audio
+                ref={recordingAudioRef}
+                src={recordingUrl}
+                preload="metadata"
+                onLoadedMetadata={e => setRecordingDuration(e.currentTarget.duration || recordingDuration)}
+                onTimeUpdate={e => setRecordingCurrent(e.currentTarget.currentTime)}
+                onEnded={() => setIsPlayingRecording(false)}
+              />
+              <div className="flex items-center gap-2 mb-3">
+                <button
+                  onClick={() => seekRecording(recordingCurrent - 5)}
+                  className="px-3 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm hover:border-indigo-200 hover:text-indigo-700 transition"
+                >
+                  -5s
+                </button>
+                <button
+                  onClick={toggleRecordingPlayback}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition"
+                >
+                  {isPlayingRecording ? 'Pause' : 'Play'}
+                </button>
+                <button
+                  onClick={() => seekRecording(recordingCurrent + 5)}
+                  className="px-3 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm hover:border-indigo-200 hover:text-indigo-700 transition"
+                >
+                  +5s
+                </button>
+                <select
+                  value={recordingSpeed}
+                  onChange={e => changeRecordingSpeed(Number(e.target.value))}
+                  className="ml-auto rounded-lg border border-gray-200 px-2 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  aria-label="Playback speed"
+                >
+                  {[0.75, 1, 1.25, 1.5].map(speed => (
+                    <option key={speed} value={speed}>{speed}x</option>
+                  ))}
+                </select>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={Math.max(recordingDuration, 1)}
+                step={0.1}
+                value={Math.min(recordingCurrent, recordingDuration || recordingCurrent)}
+                onChange={e => seekRecording(Number(e.target.value))}
+                className="w-full accent-indigo-600"
+                aria-label="Recording timeline"
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>{formatTime(Math.floor(recordingCurrent))}</span>
+                <span>{formatTime(Math.floor(recordingDuration || 0))}</span>
+              </div>
+            </div>
+          )}
 
           {result.xp.xpEarned > 0 && (
             <div className="bg-indigo-600 rounded-2xl p-5 text-white">

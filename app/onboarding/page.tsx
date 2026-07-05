@@ -87,7 +87,7 @@ export default function OnboardingPage() {
           <div className="h-1.5 bg-indigo-400 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
         </div>
 
-        <div className="bg-white rounded-2xl p-8 shadow-2xl">
+        <div className="bg-white rounded-2xl p-5 sm:p-8 shadow-2xl">
           <h2 className="text-xl font-bold text-gray-800 mb-6">{STEPS[step].title}</h2>
 
           {step === 0 && (
@@ -103,7 +103,7 @@ export default function OnboardingPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Seniority level</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {SENIORITY_OPTIONS.map(s => (
                     <button key={s} type="button"
                       onClick={() => setForm(p => ({ ...p, seniority: s }))}
@@ -114,7 +114,7 @@ export default function OnboardingPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {INDUSTRY_OPTIONS.map(i => (
                     <button key={i} type="button"
                       onClick={() => setForm(p => ({ ...p, industry: i }))}
@@ -125,7 +125,7 @@ export default function OnboardingPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company size</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {SIZE_OPTIONS.map(s => (
                     <button key={s} type="button"
                       onClick={() => setForm(p => ({ ...p, company_size: s }))}
@@ -176,7 +176,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          <div className="flex justify-between mt-8">
+          <div className="flex justify-between gap-3 mt-8">
             <button
               type="button"
               onClick={() => setStep(s => s - 1)}

@@ -171,9 +171,9 @@ function PracticeContent() {
     GLOBAL_CATEGORIES.find(c => c.id === activeCat)
 
   return (
-    <div className="flex h-full">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-96px)] lg:h-full">
       {/* Left sidebar: categories */}
-      <div className="w-64 shrink-0 border-r border-gray-100 bg-white flex flex-col h-full overflow-y-auto">
+      <div className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-gray-100 bg-white flex flex-col lg:h-full overflow-y-auto">
         <div className="px-4 pt-5 pb-3">
           <h2 className="font-bold text-gray-800 text-sm">Your Practice Areas</h2>
           <p className="text-xs text-gray-400 mt-0.5">AI-tailored for your role</p>
@@ -195,34 +195,38 @@ function PracticeContent() {
             )}
             <div className="px-3 pb-2">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1.5">For you</p>
-              {userCats.map(cat => (
-                <button key={cat.id}
-                  onClick={() => loadScenarios(cat.id, 'user')}
-                  className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 transition text-sm ${activeCat === cat.id && activeCatType === 'user' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                >
-                  <span className="text-base shrink-0">{cat.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="truncate">{cat.name}</div>
-                    <div className="text-xs text-gray-400">{cat.scenario_count ?? 0} scenarios</div>
-                  </div>
-                  {cat.source === 'user_requested' && (
-                    <span className="text-xs text-indigo-400 shrink-0">custom</span>
-                  )}
-                </button>
-              ))}
+              <div className="flex lg:block gap-2 overflow-x-auto pb-1">
+                {userCats.map(cat => (
+                  <button key={cat.id}
+                    onClick={() => loadScenarios(cat.id, 'user')}
+                    className={`min-w-52 lg:min-w-0 lg:w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 transition text-sm ${activeCat === cat.id && activeCatType === 'user' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    <span className="text-base shrink-0">{cat.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate">{cat.name}</div>
+                      <div className="text-xs text-gray-400">{cat.scenario_count ?? 0} scenarios</div>
+                    </div>
+                    {cat.source === 'user_requested' && (
+                      <span className="text-xs text-indigo-400 shrink-0">custom</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="px-3 pb-2 mt-2 border-t border-gray-50 pt-3">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1.5">Library</p>
-              {GLOBAL_CATEGORIES.map(cat => (
-                <button key={cat.id}
-                  onClick={() => loadScenarios(cat.id, 'global')}
-                  className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 transition text-sm ${activeCat === cat.id && activeCatType === 'global' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                >
-                  <span className="text-base shrink-0">{cat.icon}</span>
-                  <span className="truncate">{cat.label}</span>
-                </button>
-              ))}
+              <div className="flex lg:block gap-2 overflow-x-auto pb-1">
+                {GLOBAL_CATEGORIES.map(cat => (
+                  <button key={cat.id}
+                    onClick={() => loadScenarios(cat.id, 'global')}
+                    className={`min-w-48 lg:min-w-0 lg:w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 transition text-sm ${activeCat === cat.id && activeCatType === 'global' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    <span className="text-base shrink-0">{cat.icon}</span>
+                    <span className="truncate">{cat.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         )}
@@ -257,7 +261,7 @@ function PracticeContent() {
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {/* New category creation panel */}
         {showVoicePrompt && generating.phase !== 'processing' && (
           <NewCategoryPanel
@@ -294,7 +298,7 @@ function PracticeContent() {
             )}
 
             {loadingScenarios ? (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[1,2,3,4].map(i => <div key={i} className="h-36 bg-gray-100 rounded-xl animate-pulse" />)}
               </div>
             ) : scenarioError ? (
@@ -302,7 +306,7 @@ function PracticeContent() {
             ) : scenarios.length === 0 ? (
               <div className="text-center py-16 text-gray-400 text-sm">No scenarios yet in this category.</div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {scenarios.map(s => <ScenarioCard key={s.id} s={s} scenarioType={activeCatType} />)}
               </div>
             )}
@@ -354,7 +358,7 @@ function NewCategoryPanel({
   const [mode, setMode] = useState<'choose' | 'voice' | 'text'>('choose')
 
   return (
-    <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-6 mb-6 max-w-xl">
+    <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-4 sm:p-6 mb-6 max-w-xl">
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="font-bold text-gray-800">Create a new practice category</h3>
@@ -364,7 +368,7 @@ function NewCategoryPanel({
       </div>
 
       {mode === 'choose' && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button onClick={() => { setMode('voice'); onStartVoice() }}
             className="flex flex-col items-center gap-2 p-5 border-2 border-dashed border-indigo-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50 transition text-sm">
             <span className="text-3xl">🎤</span>
@@ -415,7 +419,7 @@ function NewCategoryPanel({
 
 export default function PracticePage() {
   return (
-    <Suspense fallback={<div className="p-8 text-gray-400 text-sm">Loading…</div>}>
+    <Suspense fallback={<div className="p-4 sm:p-8 text-gray-400 text-sm">Loading…</div>}>
       <PracticeContent />
     </Suspense>
   )

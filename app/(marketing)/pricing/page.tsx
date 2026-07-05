@@ -116,8 +116,8 @@ export default function PricingPage() {
       <section className="bg-gradient-to-br from-indigo-950 to-indigo-800 text-white py-20 px-6 text-center">
         <div className="max-w-3xl mx-auto">
           <div className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-4">Pricing</div>
-          <h1 className="text-5xl font-bold mb-4">Simple. Affordable. No surprises.</h1>
-          <p className="text-indigo-200 text-xl max-w-xl mx-auto">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Simple. Affordable. No surprises.</h1>
+          <p className="text-indigo-200 text-lg sm:text-xl max-w-xl mx-auto">
             Less than one coaching session per month. Cancel any time.
           </p>
         </div>
@@ -131,7 +131,7 @@ export default function PricingPage() {
               <div key={plan.name}
                 className={`rounded-3xl border p-8 flex flex-col relative ${
                   plan.highlight
-                    ? 'border-indigo-500 bg-indigo-600 text-white shadow-2xl shadow-indigo-200 scale-105'
+                    ? 'border-indigo-500 bg-indigo-600 text-white shadow-2xl shadow-indigo-200 md:scale-105'
                     : 'border-gray-200 bg-white'
                 }`}>
                 {plan.highlight && (
@@ -204,7 +204,7 @@ export default function PricingPage() {
       <section className="py-16 px-6 bg-gray-50">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-10">What ₹499 compares to</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { icon: '🧑‍🏫', label: 'English tutor', price: '₹800–2,000', period: 'per hour', note: '1 session' },
               { icon: '📚', label: 'Grammar course', price: '₹2,000–5,000', period: 'one-time', note: 'No practice' },

@@ -77,18 +77,20 @@ function PracticeSessionContent() {
   const audioRef    = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
-    fetch('/api/session/start', {
+    fetchJson('/api/session/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ scenarioId, scenarioType }),
     })
-      .then(r => r.json())
       .then(d => {
         setScenario(d.scenario)
         setSessionId(d.sessionId)
         setPhase('ready')
       })
-      .catch(() => { setErrorMsg('Could not load scenario'); setPhase('error') })
+      .catch(err => {
+        setErrorMsg(err instanceof Error ? err.message : 'Could not load scenario')
+        setPhase('error')
+      })
   }, [scenarioId, scenarioType])
 
   async function startRecording() {
@@ -129,36 +131,34 @@ function PracticeSessionContent() {
     const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
     const dur = (Date.now() - startTimeRef.current) / 1000
 
-    const formData = new FormData()
-    formData.append('audio', blob, 'recording.webm')
+    try {
+      const stData = await fetchJson('/api/stream', {
+        method: 'POST',
+        body: blob,
+        headers: { 'Content-Type': 'audio/webm' },
+      })
 
-    const stRes = await fetch('/api/stream', { method: 'POST', body: blob, headers: { 'Content-Type': 'audio/webm' } })
-    const stData = await stRes.json()
+      setTranscript(stData.transcript)
+      setFillerWords(stData.fillerWords)
+      setWpm(stData.wpm)
 
-    if (!stData.transcript) {
-      setErrorMsg('Could not transcribe your response. Please try again.')
+      const evData = await fetchJson('/api/session/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          transcript: stData.transcript,
+          fillerWords: stData.fillerWords,
+          wpm: stData.wpm,
+          durationSec: dur,
+        }),
+      })
+      setResult(evData)
+      setPhase('feedback')
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Could not process your response. Please try again.')
       setPhase('error')
-      return
     }
-
-    setTranscript(stData.transcript)
-    setFillerWords(stData.fillerWords)
-    setWpm(stData.wpm)
-
-    const evRes = await fetch('/api/session/evaluate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId,
-        transcript: stData.transcript,
-        fillerWords: stData.fillerWords,
-        wpm: stData.wpm,
-        durationSec: dur,
-      }),
-    })
-    const evData = await evRes.json()
-    setResult(evData)
-    setPhase('feedback')
   }
 
   function playTTS() {
@@ -193,13 +193,13 @@ function PracticeSessionContent() {
   }
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto lg:mx-0">
       <div className="mb-4">
         <Link href="/practice" className="text-sm text-indigo-600 hover:underline">← Scenarios</Link>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
-        <div className="flex items-start justify-between mb-4">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
           <div>
             <span className="text-xs font-semibold uppercase tracking-wide text-indigo-400">{scenario?.category?.replace('_', ' ')}</span>
             <h1 className="text-xl font-bold text-gray-800 mt-0.5">{scenario?.title}</h1>
@@ -218,7 +218,7 @@ function PracticeSessionContent() {
       </div>
 
       {(phase === 'ready' || phase === 'recording') && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 text-center">
           {phase === 'ready' ? (
             <>
               <p className="text-gray-500 text-sm mb-6">Read the scenario above, then tap the mic to answer.</p>
@@ -252,7 +252,7 @@ function PracticeSessionContent() {
       )}
 
       {phase === 'processing' && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 text-center">
           <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-600 font-medium">Analysing your response…</p>
           <p className="text-xs text-gray-400 mt-1">Transcribing → Evaluating → Generating feedback</p>
@@ -261,7 +261,7 @@ function PracticeSessionContent() {
 
       {phase === 'feedback' && result && (
         <div className="space-y-5">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-gray-800 text-lg">Your Score</h2>
               <div className="flex items-center gap-3">
@@ -283,7 +283,7 @@ function PracticeSessionContent() {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-center text-xs text-gray-500 mt-4 pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-center text-xs text-gray-500 mt-4 pt-4 border-t border-gray-100">
               <div>
                 <div className="font-semibold text-gray-700 text-base">{wpm}</div>
                 <div>Words/min <span className="text-gray-400">(ideal {scenario?.ideal_wpm_min}–{scenario?.ideal_wpm_max})</span></div>
@@ -306,7 +306,7 @@ function PracticeSessionContent() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <h3 className="font-semibold text-gray-800 mb-4">Feedback</h3>
             <div className="space-y-4">
               <div className="flex gap-3 bg-green-50 rounded-xl p-4">
@@ -332,7 +332,7 @@ function PracticeSessionContent() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-800">Model Response</h3>
               <button onClick={playTTS} disabled={isPlayingTTS}
@@ -367,7 +367,7 @@ function PracticeSessionContent() {
             <p className="text-sm text-gray-700 leading-relaxed">{transcript}</p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button onClick={tryAgain}
               className="flex-1 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-xl transition">
               Try Again
@@ -386,6 +386,17 @@ function formatTime(sec: number) {
   const m = Math.floor(sec / 60)
   const s = sec % 60
   return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+async function fetchJson(url: string, init?: RequestInit) {
+  const res = await fetch(url, init)
+  const data = await res.json().catch(() => ({}))
+
+  if (!res.ok) {
+    throw new Error(typeof data.error === 'string' ? data.error : `Request failed (${res.status})`)
+  }
+
+  return data
 }
 
 export default function PracticeSessionPage() {

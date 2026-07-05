@@ -22,8 +22,40 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pct  = next ? Math.round(((xp - current.xpRequired) / (next.xpRequired - current.xpRequired)) * 100) : 100
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <aside className="w-56 shrink-0 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+      <header className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-100">
+        <div className="px-4 py-3 flex items-center justify-between gap-3">
+          <Link href="/dashboard" className="text-xl font-bold text-indigo-700 tracking-tight shrink-0">
+            Aura<span className="text-indigo-400">Xpress</span>
+          </Link>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+              {session?.user?.name?.[0]?.toUpperCase() ?? '?'}
+            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+        <nav className="px-2 pb-2 flex gap-1 overflow-x-auto">
+          {NAV.map(n => (
+            <Link key={n.href} href={n.href}
+              className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition ${
+                path === n.href || (n.href !== '/dashboard' && path.startsWith(n.href))
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <span>{n.icon}</span>{n.label}
+            </Link>
+          ))}
+        </nav>
+      </header>
+
+      <aside className="hidden lg:flex w-56 shrink-0 bg-white border-r border-gray-100 flex-col h-screen sticky top-0">
         {/* Logo */}
         <div className="px-5 py-5 border-b border-gray-100 flex items-center justify-between">
           <Link href="/dashboard" className="text-2xl font-bold text-indigo-700 tracking-tight">
@@ -80,7 +112,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="flex-1 min-w-0 overflow-auto">{children}</main>
 
       {/* Floating AI coaching chatbot */}
       <CoachChat />

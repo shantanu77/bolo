@@ -30,7 +30,7 @@ export default function LeaderboardPage() {
   const monthLabel = new Date(data.monthYear + '-01').toLocaleString('en-IN', { month: 'long', year: 'numeric' })
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto lg:mx-0">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Leaderboard</h1>
         <p className="text-gray-400 text-sm mt-1">{monthLabel} · Resets on 1st of each month</p>
@@ -38,7 +38,7 @@ export default function LeaderboardPage() {
 
       {data.myRank && (
         <div className="bg-indigo-600 rounded-2xl p-5 text-white mb-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <div className="text-indigo-200 text-xs font-semibold mb-1">Your rank this month</div>
               <div className="text-3xl font-bold">#{data.myRank.rank}</div>
@@ -65,7 +65,7 @@ export default function LeaderboardPage() {
           <div>
             {data.leaders.map(leader => (
               <div key={leader.userId}
-                className={`flex items-center gap-4 px-5 py-4 border-b border-gray-50 last:border-0 ${leader.isMe ? 'bg-indigo-50' : 'hover:bg-gray-50'} transition`}
+                className={`flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 border-b border-gray-50 last:border-0 ${leader.isMe ? 'bg-indigo-50' : 'hover:bg-gray-50'} transition`}
               >
                 <div className={`w-8 text-center font-bold text-sm ${
                   leader.rank === 1 ? 'text-yellow-500' :

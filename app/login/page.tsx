@@ -30,7 +30,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-indigo-800 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Mini nav */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
           <Link href="/" className="text-2xl font-bold text-white tracking-tight">Aura<span className="text-indigo-400">Xpress</span></Link>
           <div className="flex gap-4 text-sm text-indigo-300">
             <Link href="/features" className="hover:text-white transition">Features</Link>
@@ -41,7 +41,7 @@ export default function LoginPage() {
           <p className="text-indigo-300 text-lg">Welcome back</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-8 shadow-2xl">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 sm:p-8 shadow-2xl">
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Sign in</h1>
 
           {error && (

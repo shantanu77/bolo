@@ -42,7 +42,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto lg:mx-0">
       {showBioModal && (
         <BioCaptureModal onDone={handleBioDone} onClose={() => setShowBioModal(false)} />
       )}
@@ -56,7 +56,7 @@ export default function DashboardPage() {
 
       {/* Bio CTA — show if bio not yet recorded */}
       {bio === null && (
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 mb-6 text-white flex items-center gap-5">
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 mb-6 text-white flex flex-col sm:flex-row sm:items-center gap-5">
           <div className="text-4xl shrink-0">🎤</div>
           <div className="flex-1">
             <div className="font-bold text-lg">Tell AuraXpress about yourself</div>
@@ -74,7 +74,7 @@ export default function DashboardPage() {
 
       {/* Bio summary strip — show if bio exists */}
       {bio?.structured && (
-        <div className="bg-white border border-indigo-100 rounded-2xl p-4 mb-6 flex items-center gap-4">
+        <div className="bg-white border border-indigo-100 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-lg shrink-0">
             {session?.user?.name?.[0]?.toUpperCase()}
           </div>
@@ -92,7 +92,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         {[
           { label: 'Streak',         value: progress ? `${progress.user.streak_days}d 🔥` : '–',  sub: 'Keep it going' },
           { label: 'Total sessions', value: progress?.totalSessions ?? '–',                         sub: 'All time' },
@@ -107,8 +107,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800">Quick Practice</h2>
             <Link href="/practice" className="text-xs text-indigo-500 hover:underline">View all →</Link>

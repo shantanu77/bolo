@@ -57,10 +57,10 @@ export default function ProgressPage() {
   const worstDim = Object.entries(data.dimensionAvg).sort((a, b) => a[1] - b[1])[0]
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto lg:mx-0">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">My Progress</h1>
 
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         {[
           { label: 'Level',         value: `${data.user.level.level} — ${data.user.level.title}`, sub: `${data.user.xp} XP total` },
           { label: 'Sessions',      value: data.totalSessions,  sub: 'All time' },
@@ -75,8 +75,8 @@ export default function ProgressPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-6">
-        <div className="col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
           <h2 className="font-semibold text-gray-700 mb-5">Score by Dimension</h2>
           <div className="space-y-4">
             {Object.entries(data.dimensionAvg).map(([dim, avg]) => (
@@ -122,7 +122,7 @@ export default function ProgressPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-semibold text-gray-700 mb-4">Scenario Mastery</h2>
           <div className="space-y-3">

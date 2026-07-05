@@ -344,6 +344,8 @@ Later, this can be automated through GitHub Actions.
 
 Production `.env` should include:
 
+Next.js expands `$VAR` / `${VAR}` references when it loads `.env*` files. Any secret containing a literal `$` (e.g. a generated DB password) must escape it as `\$`, or Next.js will silently substitute it with an empty string and the app will fail to authenticate — the failure only shows up at runtime (`ER_ACCESS_DENIED_ERROR`), not at build time, since tools like the `mysql` CLI don't do this expansion.
+
 ```bash
 # App
 NEXT_PUBLIC_APP_URL=https://auraxpress.com

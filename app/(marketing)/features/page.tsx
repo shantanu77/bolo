@@ -2,8 +2,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Features — Bolo',
-  description: 'Everything Bolo does to help Indian professionals speak better English at work.',
+  title: 'Features — AuraXpress',
+  description: 'Everything AuraXpress does to help Indian professionals speak better English at work.',
 }
 
 const CORE_FEATURES = [
@@ -11,8 +11,8 @@ const CORE_FEATURES = [
     id: 'voice-bio',
     icon: '🎙️',
     badge: 'Smart Onboarding',
-    title: 'Speak about yourself. Bolo does the rest.',
-    desc: `Most apps ask you to fill a form. Bolo asks you to speak for 60 seconds. Tell it your job, your responsibilities, who you interact with, and what challenges you face. GPT-4o structures everything automatically into a rich professional profile that shapes every scenario and evaluation you will ever receive.`,
+    title: 'Speak about yourself. AuraXpress does the rest.',
+    desc: `Most apps ask you to fill a form. AuraXpress asks you to speak for 60 seconds. Tell it your job, your responsibilities, who you interact with, and what challenges you face. GPT-4o structures everything automatically into a rich professional profile that shapes every scenario and evaluation you will ever receive.`,
     points: [
       'Record a 60-second voice introduction',
       'AI extracts role, seniority, industry, team context, communication challenges',
@@ -26,7 +26,7 @@ const CORE_FEATURES = [
     icon: '📋',
     badge: 'Personalised Content',
     title: 'Scenarios built for your exact job, not a generic professional.',
-    desc: `Bolo does not give every user the same 10 exercises. After you set up your profile, GPT-4o generates 5–6 practice categories and 15+ scenarios that are specific to your role, industry, seniority, and who you speak with. A startup founder gets investor pitches and customer sales conversations. A BPO agent gets empathy-building and call resolution scenarios.`,
+    desc: `AuraXpress does not give every user the same 10 exercises. After you set up your profile, GPT-4o generates 5–6 practice categories and 15+ scenarios that are specific to your role, industry, seniority, and who you speak with. A startup founder gets investor pitches and customer sales conversations. A BPO agent gets empathy-building and call resolution scenarios.`,
     points: [
       'AI-generated categories tailored to your profession',
       'Scenarios cover your actual communication contexts',
@@ -40,7 +40,7 @@ const CORE_FEATURES = [
     icon: '🧠',
     badge: 'AI Evaluation',
     title: 'Not just a score — a mirror that shows you exactly what to fix.',
-    desc: `After you speak, Bolo evaluates your response across 6 dimensions: Clarity, Fluency, Vocabulary, Structure, Confidence, and Tone. It gives you one specific improvement to focus on (not five), then speaks back a model response — what a confident professional in your exact role would have said in that situation.`,
+    desc: `After you speak, AuraXpress evaluates your response across 6 dimensions: Clarity, Fluency, Vocabulary, Structure, Confidence, and Tone. It gives you one specific improvement to focus on (not five), then speaks back a model response — what a confident professional in your exact role would have said in that situation.`,
     points: [
       'Scores on 6 communication dimensions (1–5 scale)',
       'Overall score out of 100',
@@ -71,7 +71,7 @@ const CORE_FEATURES = [
     icon: '🏆',
     badge: 'Gamification',
     title: 'Turn 10 minutes of daily practice into a habit you actually keep.',
-    desc: `Bolo uses XP, levels, streaks, badges, and a monthly leaderboard to make practice feel less like a chore. The daily challenge gives everyone the same scenario — a shared experience that creates community. Streak shields mean you will not lose your 30-day streak over one missed day.`,
+    desc: `AuraXpress uses XP, levels, streaks, badges, and a monthly leaderboard to make practice feel less like a chore. The daily challenge gives everyone the same scenario — a shared experience that creates community. Streak shields mean you will not lose your 30-day streak over one missed day.`,
     points: [
       'XP earned per session, with bonuses for high scores and personal bests',
       '10 levels from "First Word" to "Masterclass"',
@@ -100,7 +100,7 @@ export default function FeaturesPage() {
       {/* Hero */}
       <section className="bg-gradient-to-br from-indigo-950 to-indigo-800 text-white py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-4">Everything Bolo does</div>
+          <div className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-4">Everything AuraXpress does</div>
           <h1 className="text-5xl font-bold mb-6">Features built for one thing</h1>
           <p className="text-xl text-indigo-200 leading-relaxed">
             Making Indian professionals sound more confident, clear, and professional in English — in the exact situations they face at work.
@@ -174,7 +174,7 @@ export default function FeaturesPage() {
           <div className="text-xs font-semibold uppercase tracking-widest text-indigo-500 mb-4">Technology</div>
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Built on best-in-class AI</h2>
           <p className="text-gray-500 mb-12 max-w-2xl mx-auto">
-            Bolo uses Deepgram for real-time speech recognition with Indian English optimisation, and GPT-4o for evaluation, scenario generation, and model response creation.
+            AuraXpress uses Deepgram for real-time speech recognition with Indian English optimisation, and GPT-4o for evaluation, scenario generation, and model response creation.
           </p>
           <div className="grid sm:grid-cols-3 gap-6 text-left">
             {[

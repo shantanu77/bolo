@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Pricing — Bolo',
+  title: 'Pricing — AuraXpress',
   description: 'Simple, affordable pricing for individual professionals and teams.',
 }
 
@@ -11,7 +11,7 @@ const PLANS = [
     name: 'Free',
     price: '₹0',
     period: 'forever',
-    desc: 'Get a feel for Bolo. No credit card, no commitment.',
+    desc: 'Get a feel for AuraXpress. No credit card, no commitment.',
     cta: 'Start for free',
     ctaHref: '/signup',
     highlight: false,
@@ -44,7 +44,7 @@ const PLANS = [
       'Unlimited practice sessions',
       'All scenario categories',
       'AI-generated personalised categories',
-      'Voice bio — Bolo learns your profile',
+      'Voice bio — AuraXpress learns your profile',
       'Create unlimited custom categories by voice',
       'Full progress dashboard and analytics',
       'Leaderboard participation and ranking',
@@ -62,7 +62,7 @@ const PLANS = [
     period: 'per seat / month (min 5)',
     desc: 'For companies investing in their team\'s communication.',
     cta: 'Contact us',
-    ctaHref: 'mailto:hello@bolo.in',
+    ctaHref: 'mailto:hello@auraxpress.com',
     highlight: false,
     features: [
       'Everything in Pro',
@@ -96,7 +96,7 @@ const FAQ = [
   },
   {
     q: 'What is included in "AI-generated personalised categories"?',
-    a: 'After you complete your profile (form or voice bio), Bolo generates 5–6 practice categories specifically for your role and industry — not generic ones. A product manager gets different scenarios than a sales professional.',
+    a: 'After you complete your profile (form or voice bio), AuraXpress generates 5–6 practice categories specifically for your role and industry — not generic ones. A product manager gets different scenarios than a sales professional.',
   },
   {
     q: 'How does the Teams plan work?',
@@ -104,7 +104,7 @@ const FAQ = [
   },
   {
     q: 'Is there a student discount?',
-    a: 'Yes — students with a valid college email get 50% off Pro. Email us at hello@bolo.in with your college ID.',
+    a: 'Yes — students with a valid college email get 50% off Pro. Email us at hello@auraxpress.com with your college ID.',
   },
 ]
 
@@ -195,7 +195,7 @@ export default function PricingPage() {
 
           <p className="text-center text-sm text-gray-400 mt-10">
             All prices in INR. GST applicable. Student discount available —{' '}
-            <a href="mailto:hello@bolo.in" className="text-indigo-500 hover:underline">email us</a>.
+            <a href="mailto:hello@auraxpress.com" className="text-indigo-500 hover:underline">email us</a>.
           </p>
         </div>
       </section>
@@ -208,7 +208,7 @@ export default function PricingPage() {
             {[
               { icon: '🧑‍🏫', label: 'English tutor', price: '₹800–2,000', period: 'per hour', note: '1 session' },
               { icon: '📚', label: 'Grammar course', price: '₹2,000–5,000', period: 'one-time', note: 'No practice' },
-              { icon: '🎤', label: 'Bolo Pro', price: '₹499', period: 'per month', note: 'Unlimited sessions', highlight: true },
+              { icon: '🎤', label: 'AuraXpress Pro', price: '₹499', period: 'per month', note: 'Unlimited sessions', highlight: true },
             ].map(c => (
               <div key={c.label}
                 className={`rounded-2xl p-6 border text-center ${c.highlight ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-white border-gray-100'}`}>

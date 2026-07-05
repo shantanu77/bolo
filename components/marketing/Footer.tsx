@@ -6,10 +6,10 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-10">
         <div className="col-span-2 md:col-span-1">
           <div className="text-2xl font-bold text-white tracking-tight mb-3">
-            bolo<span className="text-indigo-400">.</span>
+            Aura<span className="text-indigo-400">Xpress</span>
           </div>
           <p className="text-sm leading-relaxed">
-            AI-powered spoken English coaching for Indian professionals. Speak better. Sound confident. In any room.
+            Situational English training for modern professionals.
           </p>
         </div>
 
@@ -35,14 +35,14 @@ export default function Footer() {
           <ul className="space-y-2.5 text-sm">
             <li><Link href="/login" className="hover:text-white transition">Login</Link></li>
             <li>
-              <a href="mailto:hello@bolo.in" className="hover:text-white transition">hello@bolo.in</a>
+              <a href="mailto:hello@auraxpress.com" className="hover:text-white transition">hello@auraxpress.com</a>
             </li>
           </ul>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-6 pb-8 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-indigo-500">
-        <span>© {new Date().getFullYear()} Bolo. Made with ♥ in India.</span>
+        <span>© {new Date().getFullYear()} AuraXpress. Made with ♥ in India.</span>
         <div className="flex gap-5">
           <Link href="#" className="hover:text-indigo-300 transition">Privacy Policy</Link>
           <Link href="#" className="hover:text-indigo-300 transition">Terms of Service</Link>

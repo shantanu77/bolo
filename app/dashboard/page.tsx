@@ -59,10 +59,10 @@ export default function DashboardPage() {
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 mb-6 text-white flex items-center gap-5">
           <div className="text-4xl shrink-0">🎤</div>
           <div className="flex-1">
-            <div className="font-bold text-lg">Tell Bolo about yourself</div>
+            <div className="font-bold text-lg">Tell AuraXpress about yourself</div>
             <p className="text-indigo-100 text-sm mt-0.5">
               Speak for 60 seconds about your role, responsibilities, and communication challenges.
-              Bolo uses this to tailor every scenario and evaluation specifically to you.
+              AuraXpress uses this to tailor every scenario and evaluation specifically to you.
             </p>
           </div>
           <button onClick={() => setShowBioModal(true)}

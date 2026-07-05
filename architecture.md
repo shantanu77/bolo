@@ -154,7 +154,7 @@ Use Tailwind CSS.
 The Phase 1 MVP will be hosted on a self-managed server using the domain:
 
 ```text
-bolo.omnihire.in
+auraxpress.com
 ```
 
 The application server will be accessed over SSH using the configured SSH key.
@@ -225,7 +225,7 @@ Nginx should terminate HTTPS and proxy requests to the Next.js/Node.js applicati
 Recommended public endpoint:
 
 ```text
-https://bolo.omnihire.in
+https://auraxpress.com
 ```
 
 Nginx should support:
@@ -247,7 +247,7 @@ Unlike Vercel deployment, the self-hosted setup can directly support WebSocket a
 The browser will send audio chunks to:
 
 ```text
-wss://bolo.omnihire.in/api/stream/audio
+wss://auraxpress.com/api/stream/audio
 ```
 
 The backend will proxy the audio stream to Deepgram and send transcript events back to the browser.
@@ -263,9 +263,9 @@ Since the app is hosted on your own server, local storage can be used for Phase 
 Recommended storage paths:
 
 ```text
-/var/www/bolo/storage/audio
-/var/www/bolo/storage/tts
-/var/www/bolo/storage/temp
+/var/www/auraxpress/storage/audio
+/var/www/auraxpress/storage/tts
+/var/www/auraxpress/storage/temp
 ```
 
 File structure:
@@ -295,13 +295,13 @@ Use PM2 to run the app.
 Recommended process name:
 
 ```text
-bolo-app
+auraxpress-app
 ```
 
 Example commands:
 
 ```bash
-pm2 start npm --name bolo-app -- start
+pm2 start npm --name auraxpress-app -- start
 pm2 save
 pm2 startup
 ```
@@ -318,7 +318,7 @@ Recommended deployment flow:
 Developer machine / GitHub
         │
         ▼
-SSH into bolo.omnihire.in
+SSH into auraxpress.com
         │
         ▼
 git pull latest code
@@ -333,7 +333,7 @@ npx prisma migrate deploy
 npm run build
         │
         ▼
-pm2 restart bolo-app
+pm2 restart auraxpress-app
 ```
 
 Later, this can be automated through GitHub Actions.
@@ -346,14 +346,14 @@ Production `.env` should include:
 
 ```bash
 # App
-NEXT_PUBLIC_APP_URL=https://bolo.omnihire.in
+NEXT_PUBLIC_APP_URL=https://auraxpress.com
 NODE_ENV=production
 
 # Database
 DATABASE_URL=mysql://bolo_user:strong_password@10.0.0.3:3306/bolo_english
 
 # Auth
-NEXTAUTH_URL=https://bolo.omnihire.in
+NEXTAUTH_URL=https://auraxpress.com
 NEXTAUTH_SECRET=
 
 # Google OAuth
@@ -370,7 +370,7 @@ OPENAI_TTS_MODEL=gpt-4o-mini-tts
 OPENAI_TTS_VOICE=
 
 # Local Storage
-LOCAL_STORAGE_PATH=/var/www/bolo/storage
+LOCAL_STORAGE_PATH=/var/www/auraxpress/storage
 AUDIO_RETENTION_DAYS=7
 
 # Razorpay - optional
@@ -1263,7 +1263,7 @@ POST /api/session/evaluate
 ## 10.1 System Prompt
 
 ```text
-You are Bolo, an English communication coach for Indian professionals.
+You are AuraXpress, an English communication coach for Indian professionals.
 
 Your job is to evaluate spoken workplace English and help the user improve.
 

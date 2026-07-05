@@ -94,7 +94,7 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
           <div>
-            <h2 className="text-lg font-bold text-gray-800">Tell Bolo about yourself</h2>
+            <h2 className="text-lg font-bold text-gray-800">Tell AuraXpress about yourself</h2>
             <p className="text-xs text-gray-400 mt-0.5">Your profile shapes every scenario and evaluation</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
@@ -110,7 +110,7 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
           {phase === 'idle' && (
             <div className="text-center">
               <p className="text-sm text-gray-400 mb-5">
-                Speak freely for 30–90 seconds. Bolo will structure what you say into your profile automatically.
+                Speak freely for 30–90 seconds. AuraXpress will structure what you say into your profile automatically.
               </p>
               <button onClick={startRecording}
                 className="w-20 h-20 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-3xl shadow-lg shadow-indigo-200 transition flex items-center justify-center mx-auto">
@@ -182,7 +182,7 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
 
               {structured.evaluation_lens && (
                 <div className="bg-indigo-50 rounded-lg px-4 py-3 text-xs text-indigo-700 mb-4 border border-indigo-100">
-                  <span className="font-semibold">How Bolo will evaluate you: </span>
+                  <span className="font-semibold">How AuraXpress will evaluate you: </span>
                   {structured.evaluation_lens}
                 </div>
               )}

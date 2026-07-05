@@ -330,7 +330,7 @@ function NewCategoryPanel({
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="font-bold text-gray-800">Create a new practice category</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Describe what you want to practice — Bolo will generate scenarios for it.</p>
+          <p className="text-xs text-gray-400 mt-0.5">Describe what you want to practice — AuraXpress will generate scenarios for it.</p>
         </div>
         <button onClick={onCancel} className="text-gray-300 hover:text-gray-500 text-xl leading-none">×</button>
       </div>

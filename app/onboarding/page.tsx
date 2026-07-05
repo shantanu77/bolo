@@ -79,7 +79,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-indigo-800 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
-          <span className="text-3xl font-bold text-white tracking-tight">bolo.</span>
+          <span className="text-3xl font-bold text-white tracking-tight">Aura<span className="text-indigo-400">Xpress</span></span>
           <p className="text-indigo-300 mt-1 text-sm">Step {step + 1} of {STEPS.length}</p>
         </div>
 

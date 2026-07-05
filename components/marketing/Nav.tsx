@@ -17,7 +17,7 @@ export default function Nav() {
     <header className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-indigo-950/80 backdrop-blur-md">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold text-white tracking-tight">
-          bolo<span className="text-indigo-400">.</span>
+          Aura<span className="text-indigo-400">Xpress</span>
         </Link>
 
         {/* Desktop nav */}

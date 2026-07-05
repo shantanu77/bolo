@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   const avgConfidence = recentAttempts.length ? Math.round(recentAttempts.reduce((s, a) => s + a.score_confidence, 0) / recentAttempts.length) : null
   const avgFillers    = recentAttempts.length ? (recentAttempts.reduce((s, a) => s + a.filler_word_count, 0) / recentAttempts.length).toFixed(1) : null
 
-  const systemPrompt = `You are Bolo Coach — a friendly, practical English communication coach built specifically for Indian professionals. You are embedded inside the Bolo app.
+  const systemPrompt = `You are AuraXpress Coach — a friendly, practical English communication coach built specifically for Indian professionals. You are embedded inside the AuraXpress app.
 
 Your role: answer questions about how to communicate better in English, give practical tips, coach the user on specific scenarios, and help them understand their practice data. You know this user personally.
 
@@ -87,7 +87,7 @@ COACHING GUIDELINES:
 - Use Indian English examples and contexts. Do not use American or British workplace examples that would feel foreign.
 - Keep responses concise — 3-5 sentences max unless they ask for more detail.
 - If they ask you to demonstrate or roleplay, do it with realistic examples for their role.
-- You can suggest which Bolo scenarios to practice based on their question.`
+- You can suggest which AuraXpress scenarios to practice based on their question.`
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',

@@ -1,4 +1,4 @@
-# bolo. — Speak Better English.
+# AuraXpress — Situational English Training for Modern Professionals
 
 > **AI-powered spoken English coaching for Indian professionals.**
 > Speak. Get evaluated. Hear a better version. Repeat.
@@ -9,27 +9,27 @@
 
 Millions of Indian professionals are technically brilliant — but held back by communication confidence in English. Not by grammar. Not by vocabulary. By the gap between how they think and how they come across in a meeting, on a client call, or in a job interview.
 
-**Bolo closes that gap.**
+**AuraXpress closes that gap.**
 
 Not through drills. Not through textbooks. Through realistic, voice-first practice — evaluated by AI that actually understands your job, your industry, and what good communication looks like at your level.
 
 ---
 
-## What Makes Bolo Different
+## What Makes AuraXpress Different
 
-### 🎙️ Voice Bio — Bolo Learns Who You Are
+### 🎙️ Voice Bio — AuraXpress Learns Who You Are
 
-Speak for 60 seconds about your role, team, challenges, and goals. Bolo transcribes it and uses GPT-4o to extract a structured professional profile: your seniority, industry, who you speak with, and how you should be evaluated. A CTO practising board communication is held to a very different standard than a junior engineer on a standup.
+Speak for 60 seconds about your role, team, challenges, and goals. AuraXpress transcribes it and uses GPT-4o to extract a structured professional profile: your seniority, industry, who you speak with, and how you should be evaluated. A CTO practising board communication is held to a very different standard than a junior engineer on a standup.
 
 ### 📋 AI-Generated Scenarios Tailored to Your Role
 
-Bolo doesn't give every user the same 10 exercises. After onboarding, it generates 5–6 practice categories and 15+ scenarios specific to your job — dynamically, using your profile. A startup founder gets investor pitch scenarios. A BPO agent gets empathy and de-escalation scenarios. A sales professional gets objection-handling and discovery call scenarios.
+AuraXpress doesn't give every user the same 10 exercises. After onboarding, it generates 5–6 practice categories and 15+ scenarios specific to your job — dynamically, using your profile. A startup founder gets investor pitch scenarios. A BPO agent gets empathy and de-escalation scenarios. A sales professional gets objection-handling and discovery call scenarios.
 
-You can also **create any category by speaking**: *"I want to practise explaining technical debt to non-technical stakeholders"* → Bolo generates a full category with 3–4 realistic scenarios.
+You can also **create any category by speaking**: *"I want to practise explaining technical debt to non-technical stakeholders"* → AuraXpress generates a full category with 3–4 realistic scenarios.
 
 ### 🧠 Evaluation That Actually Means Something
 
-After you speak, Bolo evaluates your response across **6 dimensions**:
+After you speak, AuraXpress evaluates your response across **6 dimensions**:
 
 | Dimension | What it measures |
 |---|---|
@@ -44,7 +44,7 @@ You get **one focused improvement** per session (not five — no overwhelm), plu
 
 ### 🔊 Voice In, Voice Out
 
-The entire experience is audio-first. You speak, Bolo listens, evaluates, and speaks back. No typing. No multiple choice. Just like having a coach — available 24/7.
+The entire experience is audio-first. You speak, AuraXpress listens, evaluates, and speaks back. No typing. No multiple choice. Just like having a coach — available 24/7.
 
 Powered by **Deepgram nova-2 (en-IN)** for Indian English speech recognition with filler word detection, and **OpenAI TTS** for natural audio feedback.
 
@@ -73,9 +73,9 @@ A floating coach powered by GPT-4o that knows your profile, your recent scores, 
 
 ---
 
-## Who Bolo Is For
+## Who AuraXpress Is For
 
-| Who | What Bolo helps with |
+| Who | What AuraXpress helps with |
 |---|---|
 | 💻 **IT Professionals** | International client calls, standups, sprint ceremonies |
 | 🎓 **MBA Students & Freshers** | Group discussions, case interviews, placement prep |
@@ -223,7 +223,7 @@ bolo/
 
 ## Philosophy
 
-Bolo does not try to make Indian professionals sound American or British. **Indian English is valid English.** The goal is clarity, confidence, and appropriateness — in whatever room you are in.
+AuraXpress does not try to make Indian professionals sound American or British. **Indian English is valid English.** The goal is clarity, confidence, and appropriateness — in whatever room you are in.
 
 We flag what reduces clarity or sounds out of register. We leave everything else alone.
 

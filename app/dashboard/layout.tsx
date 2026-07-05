@@ -27,7 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-gray-100 flex items-center justify-between">
           <Link href="/dashboard" className="text-2xl font-bold text-indigo-700 tracking-tight">
-            bolo<span className="text-indigo-400">.</span>
+            Aura<span className="text-indigo-400">Xpress</span>
           </Link>
         </div>
 

@@ -18,13 +18,13 @@ const HOW_IT_WORKS = [
   {
     step: '01',
     title: 'Build your profile',
-    desc: 'Tell Bolo about your job, who you speak with, and what you want to improve. Or just record a 60-second voice intro and Bolo will figure it out for you.',
+    desc: 'Tell AuraXpress about your job, who you speak with, and what you want to improve. Or just record a 60-second voice intro and AuraXpress will figure it out for you.',
     icon: '👤',
   },
   {
     step: '02',
     title: 'Practice with realistic scenarios',
-    desc: 'Bolo generates scenarios tailored to your role — client calls for IT professionals, investor pitches for founders, interviews for freshers. Speak your answer freely.',
+    desc: 'AuraXpress generates scenarios tailored to your role — client calls for IT professionals, investor pitches for founders, interviews for freshers. Speak your answer freely.',
     icon: '🎤',
   },
   {
@@ -39,7 +39,7 @@ const FEATURES_PREVIEW = [
   {
     icon: '🧠',
     title: 'AI that actually knows your role',
-    desc: 'A CTO practising board communication is evaluated differently from a fresher preparing for interviews. Bolo calibrates to your specific professional context.',
+    desc: 'A CTO practising board communication is evaluated differently from a fresher preparing for interviews. AuraXpress calibrates to your specific professional context.',
   },
   {
     icon: '🗣️',
@@ -49,7 +49,7 @@ const FEATURES_PREVIEW = [
   {
     icon: '🏏',
     title: 'Gamification that keeps you coming back',
-    desc: 'XP, streaks, badges, a daily challenge, leaderboards — Bolo makes 10 minutes of daily practice feel like a habit, not homework.',
+    desc: 'XP, streaks, badges, a daily challenge, leaderboards — AuraXpress makes 10 minutes of daily practice feel like a habit, not homework.',
   },
   {
     icon: '📊',
@@ -62,7 +62,7 @@ const TESTIMONIALS = [
   {
     name: 'Priya Menon',
     role: 'Senior Software Engineer, Bangalore',
-    text: 'After 3 weeks of daily practice, my US client stopped asking me to repeat myself. That was the moment I knew Bolo was working.',
+    text: 'After 3 weeks of daily practice, my US client stopped asking me to repeat myself. That was the moment I knew AuraXpress was working.',
     avatar: 'P',
     color: 'bg-pink-100 text-pink-700',
   },
@@ -76,7 +76,7 @@ const TESTIMONIALS = [
   {
     name: 'Kavitha Srinivasan',
     role: 'Startup Founder, Chennai',
-    text: 'I recorded my 60-second bio and Bolo immediately generated investor pitch scenarios. That level of personalisation is something I have not seen anywhere else.',
+    text: 'I recorded my 60-second bio and AuraXpress immediately generated investor pitch scenarios. That level of personalisation is something I have not seen anywhere else.',
     avatar: 'K',
     color: 'bg-green-100 text-green-700',
   },
@@ -110,7 +110,7 @@ export default function HomePage() {
             </h1>
 
             <p className="text-xl text-indigo-200 max-w-xl leading-relaxed mb-10">
-              Bolo listens to you speak, evaluates your response, and plays back a better version — tailored to your job, your industry, and your communication goals.
+              AuraXpress listens to you speak, evaluates your response, and plays back a better version — tailored to your job, your industry, and your communication goals.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-16">
@@ -153,7 +153,7 @@ export default function HomePage() {
             ))}
           </div>
           <p className="mt-10 text-gray-400 text-sm">
-            Bolo does not fix your accent. It makes you clearer, more confident, and better-suited for every professional situation.
+            AuraXpress does not fix your accent. It makes you clearer, more confident, and better-suited for every professional situation.
           </p>
         </div>
       </section>
@@ -163,7 +163,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <div className="text-xs font-semibold uppercase tracking-widest text-indigo-500 mb-4">Simple loop. Real results.</div>
-            <h2 className="text-4xl font-bold text-gray-900">How Bolo works</h2>
+            <h2 className="text-4xl font-bold text-gray-900">How AuraXpress works</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-10">
             {HOW_IT_WORKS.map((s, i) => (
@@ -181,7 +181,7 @@ export default function HomePage() {
           <div className="mt-16 bg-indigo-950 rounded-3xl p-10 text-white text-center">
             <div className="text-5xl mb-4">🎤</div>
             <p className="text-xl font-semibold mb-2">The entire experience is voice-first.</p>
-            <p className="text-indigo-300 max-w-lg mx-auto">No typing. No multiple choice. You speak, Bolo listens, evaluates, and speaks back. Just like a real coach — available 24/7.</p>
+            <p className="text-indigo-300 max-w-lg mx-auto">No typing. No multiple choice. You speak, AuraXpress listens, evaluates, and speaks back. Just like a real coach — available 24/7.</p>
           </div>
         </div>
       </section>
@@ -190,10 +190,10 @@ export default function HomePage() {
       <section className="py-24 px-6 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="text-xs font-semibold uppercase tracking-widest text-indigo-500 mb-4">What makes Bolo different</div>
+            <div className="text-xs font-semibold uppercase tracking-widest text-indigo-500 mb-4">What makes AuraXpress different</div>
             <h2 className="text-4xl font-bold text-gray-900">Not a language app. A communication coach.</h2>
             <p className="text-gray-500 mt-4 max-w-xl mx-auto">
-              Duolingo teaches grammar. Bolo teaches you to sound confident in a Monday morning standup. That is a very different thing.
+              Duolingo teaches grammar. AuraXpress teaches you to sound confident in a Monday morning standup. That is a very different thing.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
@@ -218,7 +218,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <div className="text-xs font-semibold uppercase tracking-widest text-indigo-500 mb-4">Built for your context</div>
-            <h2 className="text-4xl font-bold text-gray-900">Who practises on Bolo?</h2>
+            <h2 className="text-4xl font-bold text-gray-900">Who practises on AuraXpress?</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {WHO_FOR.map(w => (
@@ -239,7 +239,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <div className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-4">Real users, real improvement</div>
-            <h2 className="text-4xl font-bold">What Bolo users say</h2>
+            <h2 className="text-4xl font-bold">What AuraXpress users say</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {TESTIMONIALS.map(t => (
@@ -290,7 +290,7 @@ export default function HomePage() {
             10 minutes a day.<br />Speak better in 2 weeks.
           </h2>
           <p className="text-indigo-200 text-lg mb-10 max-w-xl mx-auto">
-            Join thousands of Indian professionals already practising with Bolo. No accent changes. No grammar drills. Just real scenarios, real feedback, real improvement.
+            Join thousands of Indian professionals already practising with AuraXpress. No accent changes. No grammar drills. Just real scenarios, real feedback, real improvement.
           </p>
           <Link href="/signup"
             className="inline-block px-10 py-4 bg-white text-indigo-700 font-bold rounded-xl text-lg hover:bg-indigo-50 transition shadow-xl">

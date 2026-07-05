@@ -72,7 +72,7 @@ export default function CoachChat() {
       <button
         onClick={() => setOpen(o => !o)}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-300 flex items-center justify-center transition text-2xl"
-        aria-label="Open Bolo Coach"
+        aria-label="Open AuraXpress Coach"
       >
         {open ? '✕' : '💬'}
         {!open && unread > 0 && (
@@ -90,7 +90,7 @@ export default function CoachChat() {
           <div className="bg-indigo-600 px-4 py-3 flex items-center gap-3 shrink-0">
             <div className="w-9 h-9 rounded-full bg-indigo-400 flex items-center justify-center text-lg shrink-0">🎤</div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-white text-sm">Bolo Coach</div>
+              <div className="font-semibold text-white text-sm">AuraXpress Coach</div>
               <div className="text-indigo-200 text-xs">Your personal communication coach</div>
             </div>
             <div className="flex items-center gap-1">
@@ -128,7 +128,7 @@ export default function CoachChat() {
             {messages.length === 0 && (
               <div>
                 <div className="bg-indigo-50 rounded-2xl rounded-tl-sm px-4 py-3 mb-4">
-                  <p className="font-medium text-indigo-700 text-sm mb-1">Hi! I am your Bolo Coach 👋</p>
+                  <p className="font-medium text-indigo-700 text-sm mb-1">Hi! I am your AuraXpress Coach 👋</p>
                   <p className="text-xs text-gray-500 leading-relaxed">
                     Ask me anything about communicating better at work — tips, roleplay, weak area advice, or what to practise next.
                   </p>

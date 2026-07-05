@@ -37,7 +37,7 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         {/* Mini nav */}
         <div className="flex items-center justify-between mb-8">
-          <Link href="/" className="text-2xl font-bold text-white tracking-tight">bolo<span className="text-indigo-400">.</span></Link>
+          <Link href="/" className="text-2xl font-bold text-white tracking-tight">Aura<span className="text-indigo-400">Xpress</span></Link>
           <div className="flex gap-4 text-sm text-indigo-300">
             <Link href="/features" className="hover:text-white transition">Features</Link>
             <Link href="/pricing"  className="hover:text-white transition">Pricing</Link>

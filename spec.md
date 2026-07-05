@@ -1,14 +1,14 @@
-# Bolo — Product Specification
+# AuraXpress — Product Specification
 
 **Version**: 0.1 (MVP)
 **Target Market**: Indian professionals and students
-**Tagline**: Speak better. Sound confident. In any room.
+**Tagline**: Situational English Training for Modern Professionals.
 
 ---
 
 ## 1. Vision
 
-Bolo is an AI-powered spoken English coaching platform built for Indian users. It meets people where they are — aware of their mother tongue influence, their professional context, and the specific situations where they want to communicate better. It does not correct users toward a "neutral" or Western accent; it helps them speak clearly, confidently, and appropriately for the situation they are in.
+AuraXpress is an AI-powered spoken English coaching platform built for Indian users. It meets people where they are — aware of their mother tongue influence, their professional context, and the specific situations where they want to communicate better. It does not correct users toward a "neutral" or Western accent; it helps them speak clearly, confidently, and appropriately for the situation they are in.
 
 ---
 
@@ -128,15 +128,15 @@ Each scenario has:
 
 ```
 1. User selects a scenario category and specific scenario
-2. Bolo reads the context aloud (TTS, Indian English voice)
-3. Bolo asks the question / presents the prompt (TTS)
+2. AuraXpress reads the context aloud (TTS, Indian English voice)
+3. AuraXpress asks the question / presents the prompt (TTS)
 4. User taps "Start Speaking" and responds freely
 5. User taps "Done" or pauses for 2+ seconds (auto-detect)
-6. Bolo processes the response:
+6. AuraXpress processes the response:
    a. Transcription (Deepgram, en-IN)
    b. Prosody metrics (pace, pauses, filler words)
    c. LLM evaluation against persona + scenario context
-7. Bolo plays back its feedback (TTS):
+7. AuraXpress plays back its feedback (TTS):
    a. What worked
    b. What to improve (1-2 specific things max)
    c. A model response — "Here is how you could say that instead"
@@ -262,7 +262,7 @@ The dashboard is the user's home between sessions. It should feel motivating, no
 
 ### 8.3 Leaderboard
 
-The leaderboard is opt-in. Users can choose to be visible or stay anonymous (shown as "Anonymous Boloer").
+The leaderboard is opt-in. Users can choose to be visible or stay anonymous (shown as "Anonymous Speaker").
 
 **Leaderboard tiers** — reset monthly:
 
@@ -293,7 +293,7 @@ Delivered every Monday morning. Designed like a one-page personal performance br
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BOLO WEEKLY BRIEF — Week of 30 June
+AURAXPRESS WEEKLY BRIEF — Week of 30 June
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 You practiced 4 times this week. Here's where you stand.
@@ -319,7 +319,7 @@ LEADERBOARD POSITION  #43 of 1,200 users  (↑ from #67 last week)
 
 ## 9. Curriculum & Learning Path
 
-Beyond free practice, Bolo offers structured learning paths.
+Beyond free practice, AuraXpress offers structured learning paths.
 
 ### Example: "Confident on Client Calls" (4 weeks)
 

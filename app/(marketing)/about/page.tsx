@@ -2,15 +2,15 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'About — Bolo',
-  description: 'Why we built Bolo, and who we built it for.',
+  title: 'About — AuraXpress',
+  description: 'Why we built AuraXpress, and who we built it for.',
 }
 
 const VALUES = [
   {
     icon: '🇮🇳',
     title: 'Indian English is valid English',
-    desc: 'We do not correct users toward an American or British accent. Bolo helps you speak clearly and confidently in Indian English — the way hundreds of millions of people use it every day in professional settings.',
+    desc: 'We do not correct users toward an American or British accent. AuraXpress helps you speak clearly and confidently in Indian English — the way hundreds of millions of people use it every day in professional settings.',
   },
   {
     icon: '🎯',
@@ -20,12 +20,12 @@ const VALUES = [
   {
     icon: '📈',
     title: 'Practice over theory',
-    desc: 'You do not get better at speaking by reading about speaking. Every Bolo session is active practice — you speak, you get feedback, you hear what better sounds like, and you try again.',
+    desc: 'You do not get better at speaking by reading about speaking. Every AuraXpress session is active practice — you speak, you get feedback, you hear what better sounds like, and you try again.',
   },
   {
     icon: '🤝',
     title: 'Respectful, not condescending',
-    desc: 'Our users are smart, experienced professionals who communicate in two or more languages every day. Bolo treats them accordingly — as capable people who just need context-specific practice, not remedial help.',
+    desc: 'Our users are smart, experienced professionals who communicate in two or more languages every day. AuraXpress treats them accordingly — as capable people who just need context-specific practice, not remedial help.',
   },
 ]
 
@@ -57,7 +57,7 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-4">Our story</div>
           <h1 className="text-5xl sm:text-6xl font-bold mb-6 leading-tight">
-            We built Bolo because we saw the gap.
+            We built AuraXpress because we saw the gap.
           </h1>
           <p className="text-xl text-indigo-200 max-w-2xl leading-relaxed">
             Some of the sharpest professionals we know — engineers, managers, founders — were being underestimated in meetings and on calls. Not because they lacked ideas. Because the way they expressed those ideas in English did not match their actual capability.
@@ -75,7 +75,7 @@ export default function AboutPage() {
               India has over 125 million English speakers. Most of them use English every day at work. Most of them are completely capable communicators — in their native language. The gap is context: English at work often means a different register, a different structure, a different pace.
             </p>
             <p className="text-gray-500 leading-relaxed">
-              Bolo exists to close that gap through practice, not theory. Real scenarios. Real feedback. Spoken out loud. Tailored to your job, your industry, and the specific situations where you need to perform.
+              AuraXpress exists to close that gap through practice, not theory. Real scenarios. Real feedback. Spoken out loud. Tailored to your job, your industry, and the specific situations where you need to perform.
             </p>
           </div>
           <div className="bg-indigo-50 rounded-3xl p-10 text-center">
@@ -84,7 +84,7 @@ export default function AboutPage() {
             <div className="text-gray-500 text-sm">English speakers in India — most already fluent, many held back by confidence in professional contexts.</div>
             <div className="mt-8 pt-8 border-t border-indigo-100">
               <div className="text-3xl font-bold text-indigo-700 mb-2">15%</div>
-              <div className="text-gray-500 text-sm">Average score improvement after 4 weeks of daily practice on Bolo.</div>
+              <div className="text-gray-500 text-sm">Average score improvement after 4 weeks of daily practice on AuraXpress.</div>
             </div>
           </div>
         </div>
@@ -103,8 +103,8 @@ export default function AboutPage() {
 
           <div className="grid sm:grid-cols-2 gap-4 mt-10">
             {[
-              { title: 'What Bolo helps with', items: ['Clarity and sentence structure', 'Filler word reduction (um, basically, you know)', 'Speaking pace and pausing', 'Choosing the right register (formal vs. casual)', 'Structuring your answers (beginning, middle, end)', 'Confidence in being direct'] },
-              { title: 'What Bolo does not touch', items: ['Your accent', 'Your regional expressions that are clear and correct', 'Your personality and natural speaking style', 'Words that are valid Indian English', 'Your background or where you are from'] },
+              { title: 'What AuraXpress helps with', items: ['Clarity and sentence structure', 'Filler word reduction (um, basically, you know)', 'Speaking pace and pausing', 'Choosing the right register (formal vs. casual)', 'Structuring your answers (beginning, middle, end)', 'Confidence in being direct'] },
+              { title: 'What AuraXpress does not touch', items: ['Your accent', 'Your regional expressions that are clear and correct', 'Your personality and natural speaking style', 'Words that are valid Indian English', 'Your background or where you are from'] },
             ].map(s => (
               <div key={s.title} className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <div className="font-semibold text-white mb-4 text-sm">{s.title}</div>
@@ -146,7 +146,7 @@ export default function AboutPage() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
             <div className="text-xs font-semibold uppercase tracking-widest text-indigo-500 mb-4">How we got here</div>
-            <h2 className="text-4xl font-bold text-gray-900">The Bolo story</h2>
+            <h2 className="text-4xl font-bold text-gray-900">The AuraXpress story</h2>
           </div>
           <div className="relative">
             <div className="absolute left-4 top-0 bottom-0 w-px bg-indigo-100" />
@@ -183,9 +183,9 @@ export default function AboutPage() {
             ))}
           </div>
           <div className="text-center mt-12 text-gray-400 text-sm">
-            We are a small, focused team building Bolo in India, for India. <br />
+            We are a small, focused team building AuraXpress in India, for India. <br />
             If you want to work with us, write to{' '}
-            <a href="mailto:hello@bolo.in" className="text-indigo-500 hover:underline">hello@bolo.in</a>.
+            <a href="mailto:hello@auraxpress.com" className="text-indigo-500 hover:underline">hello@auraxpress.com</a>.
           </div>
         </div>
       </section>

@@ -6,7 +6,7 @@ import { Providers } from './providers'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Bolo — Speak Better English',
+  title: 'AuraXpress — Situational English Training for Modern Professionals',
   description: 'AI-powered spoken English coaching for Indian professionals',
 }
 

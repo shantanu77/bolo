@@ -1,5 +1,5 @@
 /**
- * Bolo Usage Report
+ * AuraXpress Usage Report
  *
  * Sends a usage + cost summary email for the current month.
  * Run manually:   npx ts-node -r tsconfig-paths/register scripts/send-usage-report.ts
@@ -98,11 +98,11 @@ async function run() {
       ).join('\n')
     : '  No data.'
 
-  const subject = `Bolo Usage Report — ${monthYear} (as of ${today})`
+  const subject = `AuraXpress Usage Report — ${monthYear} (as of ${today})`
 
   const text = `
 ═══════════════════════════════════════════════
-  BOLO — MONTHLY USAGE REPORT
+  AURAXPRESS — MONTHLY USAGE REPORT
   Month: ${monthYear}   Generated: ${now.toISOString()}
 ═══════════════════════════════════════════════
 
@@ -153,7 +153,7 @@ PRICING REFERENCE
   })
 
   await transporter.sendMail({
-    from:    `"Bolo Reports" <${process.env.EMAIL_FROM}>`,
+    from:    `"AuraXpress Reports" <${process.env.EMAIL_FROM}>`,
     to:      RECIPIENT,
     subject,
     text,

@@ -80,7 +80,7 @@ export async function evaluateResponse(
 
   const personaStr = personaLines.length > 0 ? personaLines.join('\n') : 'Profile not yet set.'
 
-  const prompt = `You are Bolo, an English communication coach for Indian professionals.
+  const prompt = `You are AuraXpress, an English communication coach for Indian professionals.
 
 USER PROFILE:
 ${personaStr}

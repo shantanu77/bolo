@@ -39,6 +39,34 @@ const DIM_COLORS: Record<string, string> = {
   clarity: 'bg-blue-500', fluency: 'bg-green-500', vocabulary: 'bg-purple-500',
   structure: 'bg-yellow-500', confidence: 'bg-red-400', tone_match: 'bg-indigo-500',
 }
+const IST_TIME_ZONE = 'Asia/Kolkata'
+const recentSessionDateFormatter = new Intl.DateTimeFormat('en-IN', {
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: true,
+  timeZone: IST_TIME_ZONE,
+})
+const sessionDetailDateFormatter = new Intl.DateTimeFormat('en-IN', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: true,
+  timeZone: IST_TIME_ZONE,
+  timeZoneName: 'short',
+})
+
+function formatRecentSessionTime(value: string) {
+  return `${recentSessionDateFormatter.format(new Date(value))} IST`
+}
+
+function formatSessionDetailTime(value: string) {
+  return sessionDetailDateFormatter.format(new Date(value))
+}
 
 function Stars({ count }: { count: number }) {
   return (
@@ -187,7 +215,7 @@ export default function ProgressPage() {
             <tbody>
               {data.attempts.map(a => (
                 <tr key={a.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                  <td className="py-2 pr-4 text-gray-500 whitespace-nowrap text-xs">{new Date(a.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</td>
+                  <td className="py-2 pr-4 text-gray-500 whitespace-nowrap text-xs">{formatRecentSessionTime(a.created_at)}</td>
                   <td className="py-2 pr-4 min-w-48">
                     <div className="text-gray-700 font-medium truncate">{a.scenario_title ?? 'Practice session'}</div>
                     <div className="text-xs text-gray-400 truncate">{a.scenario_category ?? 'Scenario'}</div>
@@ -244,7 +272,7 @@ function SessionDetail({ attempt, onClose }: { attempt: Attempt; onClose: () => 
           <div>
             <h3 className="font-bold text-gray-800">{attempt.scenario_title ?? 'Practice session'}</h3>
             <p className="text-xs text-gray-400 mt-0.5">
-              {new Date(attempt.created_at).toLocaleString('en-IN')} · {attempt.scenario_category ?? 'Scenario'}
+              {formatSessionDetailTime(attempt.created_at)} · {attempt.scenario_category ?? 'Scenario'}
             </p>
           </div>
           <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 transition">Close</button>

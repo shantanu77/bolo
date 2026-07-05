@@ -1,9 +1,3 @@
--- Voice bio on personas
-ALTER TABLE personas
-  ADD COLUMN IF NOT EXISTS bio_transcript   TEXT,
-  ADD COLUMN IF NOT EXISTS bio_structured   JSON,
-  ADD COLUMN IF NOT EXISTS bio_recorded_at  DATETIME;
-
 -- User-specific categories (AI-generated + user-created)
 CREATE TABLE IF NOT EXISTS user_categories (
   id          VARCHAR(36)  PRIMARY KEY DEFAULT (UUID()),
@@ -53,6 +47,6 @@ CREATE TABLE IF NOT EXISTS user_scenario_mastery (
   FOREIGN KEY (scenario_id) REFERENCES user_scenarios(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_user_categories_user ON user_categories(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_scenarios_user  ON user_scenarios(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_scenarios_cat   ON user_scenarios(category_id);
+CREATE INDEX idx_user_categories_user ON user_categories(user_id);
+CREATE INDEX idx_user_scenarios_user  ON user_scenarios(user_id);
+CREATE INDEX idx_user_scenarios_cat   ON user_scenarios(category_id);

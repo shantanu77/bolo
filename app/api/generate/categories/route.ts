@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query, execute, queryOne } from '@/lib/db'
+import { parseJsonArray, parseJsonObject } from '@/lib/json'
 import OpenAI from 'openai'
 import { randomUUID } from 'crypto'
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     bio_structured: string | null
   }>('SELECT * FROM personas WHERE user_id = ?', [session.user.id])
 
-  const bioStructured = persona?.bio_structured ? JSON.parse(persona.bio_structured) : null
+  const bioStructured = parseJsonObject(persona?.bio_structured)
 
   const categories = await generateCategories(persona, bioStructured)
 
@@ -219,14 +220,11 @@ function buildPersonaContext(persona: Record<string, unknown> | null, bio: Recor
   if (Array.isArray(contexts) && contexts.length)
     lines.push(`Communication contexts: ${contexts.join(', ')}`)
   if (bio?.evaluation_lens)         lines.push(`Evaluation note: ${bio.evaluation_lens}`)
-  if (persona?.challenges) {
-    const ch = JSON.parse(persona.challenges as string)
-    if (ch?.length) lines.push(`Self-reported challenges: ${ch.join(', ')}`)
-  }
-  if (persona?.goals) {
-    const g = JSON.parse(persona.goals as string)
-    if (g?.length) lines.push(`Goals: ${g.join(', ')}`)
-  }
+  const challenges = parseJsonArray(persona?.challenges)
+  if (challenges.length) lines.push(`Self-reported challenges: ${challenges.join(', ')}`)
+
+  const goals = parseJsonArray(persona?.goals)
+  if (goals.length) lines.push(`Goals: ${goals.join(', ')}`)
 
   return lines.join('\n')
 }

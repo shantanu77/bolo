@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query, execute, queryOne } from '@/lib/db'
+import { parseJsonObject } from '@/lib/json'
 import OpenAI from 'openai'
 import { DeepgramClient } from '@deepgram/sdk'
 import { Readable } from 'stream'
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     interacts_with: string; bio_structured: string | null
   }>('SELECT * FROM personas WHERE user_id = ?', [session.user.id])
 
-  const bioStructured = persona?.bio_structured ? JSON.parse(persona.bio_structured) : null
+  const bioStructured = parseJsonObject(persona?.bio_structured)
 
   // Generate category + scenarios from the user request
   const result = await generateFromRequest(userRequest, persona, bioStructured)

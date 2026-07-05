@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { execute, queryOne, query } from '@/lib/db'
+import { parseJsonArray, parseJsonObject } from '@/lib/json'
 import { evaluateResponse, generateTTS } from '@/lib/openai'
 import { processSessionXp, scoreToStars } from '@/lib/gamification'
 import { randomUUID } from 'crypto'
@@ -43,25 +44,14 @@ export async function POST(req: NextRequest) {
     bio_structured: string | null
   }>('SELECT * FROM personas WHERE user_id = ?', [session.user.id])
 
-  function toArr(val: unknown): string[] {
-    if (Array.isArray(val)) return val.map(String)
-    if (typeof val === 'string' && val) { try { const p = JSON.parse(val); return Array.isArray(p) ? p.map(String) : [] } catch { return [] } }
-    return []
-  }
-  function toObj(val: unknown): Record<string, unknown> | null {
-    if (val && typeof val === 'object' && !Array.isArray(val)) return val as Record<string, unknown>
-    if (typeof val === 'string' && val) { try { return JSON.parse(val) } catch { return null } }
-    return null
-  }
-
   const parsedPersona = persona ? {
     native_language: persona.native_language,
     job_role:        persona.job_role,
     seniority:       persona.seniority,
     industry:        persona.industry,
-    interacts_with:  toArr(persona.interacts_with),
-    challenges:      toArr(persona.challenges),
-    bio_structured:  toObj(persona.bio_structured),
+    interacts_with:  parseJsonArray(persona.interacts_with).map(String),
+    challenges:      parseJsonArray(persona.challenges).map(String),
+    bio_structured:  parseJsonObject(persona.bio_structured),
   } : null
 
   const evaluation = await evaluateResponse(transcript, fillerWords, wpm, scenario!, parsedPersona)

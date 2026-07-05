@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { execute, queryOne } from '@/lib/db'
+import { parseJsonObject } from '@/lib/json'
 import { DeepgramClient } from '@deepgram/sdk'
 import OpenAI from 'openai'
 import { Readable } from 'stream'
@@ -28,7 +29,7 @@ export async function GET() {
   return NextResponse.json({
     bio: {
       transcript:  persona.bio_transcript,
-      structured:  persona.bio_structured ? JSON.parse(persona.bio_structured) : null,
+      structured:  parseJsonObject(persona.bio_structured),
       recorded_at: persona.bio_recorded_at,
     },
   })

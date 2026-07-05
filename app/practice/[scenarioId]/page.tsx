@@ -80,7 +80,7 @@ function PracticeSessionContent() {
     fetch('/api/session/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scenarioId, scenarioType }), // eslint-disable-line react-hooks/exhaustive-deps
+      body: JSON.stringify({ scenarioId, scenarioType }),
     })
       .then(r => r.json())
       .then(d => {
@@ -89,7 +89,7 @@ function PracticeSessionContent() {
         setPhase('ready')
       })
       .catch(() => { setErrorMsg('Could not load scenario'); setPhase('error') })
-  }, [scenarioId])
+  }, [scenarioId, scenarioType])
 
   async function startRecording() {
     try {

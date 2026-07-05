@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { queryOne, query } from '@/lib/db'
+import { parseJsonArray, parseJsonObject } from '@/lib/json'
 import OpenAI from 'openai'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -9,13 +10,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 interface Message { role: 'user' | 'assistant'; content: string }
 
 function safeList(val: unknown): string[] {
-  if (!val) return []
-  if (Array.isArray(val)) return val.map(String)
-  if (typeof val === 'string') {
-    try { const p = JSON.parse(val); return Array.isArray(p) ? p.map(String) : [] }
-    catch { return val.split(',').map(s => s.trim()).filter(Boolean) }
-  }
-  return []
+  return parseJsonArray(val).map(String)
 }
 
 export async function POST(req: NextRequest) {
@@ -43,10 +38,7 @@ export async function POST(req: NextRequest) {
     ),
   ])
 
-  const bioRaw = persona?.bio_structured
-  const bio = bioRaw
-    ? (typeof bioRaw === 'string' ? (() => { try { return JSON.parse(bioRaw) } catch { return null } })() : bioRaw)
-    : null
+  const bio = parseJsonObject(persona?.bio_structured)
   const avgScore = recentAttempts.length
     ? Math.round(recentAttempts.reduce((s, a) => s + a.score_overall, 0) / recentAttempts.length)
     : null

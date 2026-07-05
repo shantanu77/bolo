@@ -65,6 +65,8 @@ function PracticeContent() {
   const [loadingScenarios, setLoadingScenarios] = useState(false)
   const [generating, setGenerating]     = useState<GeneratingState>({ phase: 'idle' })
   const [showVoicePrompt, setShowVoicePrompt] = useState(false)
+  const [categoryError, setCategoryError] = useState('')
+  const [scenarioError, setScenarioError] = useState('')
 
   const mediaRef  = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -73,19 +75,21 @@ function PracticeContent() {
 
   // Load user categories; auto-generate if none yet
   useEffect(() => {
-    fetch('/api/generate/categories', { method: 'GET' })
-      .then(r => r.json())
+    fetchJson('/api/generate/categories', { method: 'GET' })
       .then(async d => {
         if (!d.categories?.length) {
           // First time: generate
-          const gen = await fetch('/api/generate/categories', { method: 'POST' }).then(r => r.json())
+          const gen = await fetchJson('/api/generate/categories', { method: 'POST' })
           setUserCats(gen.categories ?? [])
         } else {
           setUserCats(d.categories)
         }
         setLoadingCats(false)
       })
-      .catch(() => setLoadingCats(false))
+      .catch(err => {
+        setCategoryError(err instanceof Error ? err.message : 'Could not load practice categories.')
+        setLoadingCats(false)
+      })
   }, [])
 
   async function loadScenarios(catId: string, type: 'user' | 'global') {
@@ -93,13 +97,19 @@ function PracticeContent() {
     setActiveCatType(type)
     setLoadingScenarios(true)
     setScenarios([])
+    setScenarioError('')
 
     const url = type === 'user'
       ? `/api/user-scenarios?category_id=${catId}`
       : `/api/scenarios?category=${catId}`
-    const data = await fetch(url).then(r => r.json())
-    setScenarios(data.scenarios ?? [])
-    setLoadingScenarios(false)
+    try {
+      const data = await fetchJson(url)
+      setScenarios(data.scenarios ?? [])
+    } catch (err) {
+      setScenarioError(err instanceof Error ? err.message : 'Could not load scenarios.')
+    } finally {
+      setLoadingScenarios(false)
+    }
   }
 
   // Voice: record new category request
@@ -178,6 +188,11 @@ function PracticeContent() {
           </div>
         ) : (
           <>
+            {categoryError && (
+              <div className="mx-3 mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+                {categoryError}
+              </div>
+            )}
             <div className="px-3 pb-2">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1.5">For you</p>
               {userCats.map(cat => (
@@ -282,6 +297,8 @@ function PracticeContent() {
               <div className="grid grid-cols-2 gap-4">
                 {[1,2,3,4].map(i => <div key={i} className="h-36 bg-gray-100 rounded-xl animate-pulse" />)}
               </div>
+            ) : scenarioError ? (
+              <div className="text-center py-16 text-red-500 text-sm">{scenarioError}</div>
             ) : scenarios.length === 0 ? (
               <div className="text-center py-16 text-gray-400 text-sm">No scenarios yet in this category.</div>
             ) : (
@@ -310,6 +327,17 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       </button>
     </div>
   )
+}
+
+async function fetchJson(url: string, init?: RequestInit) {
+  const res = await fetch(url, init)
+  const data = await res.json().catch(() => ({}))
+
+  if (!res.ok) {
+    throw new Error(typeof data.error === 'string' ? data.error : `Request failed (${res.status})`)
+  }
+
+  return data
 }
 
 function NewCategoryPanel({

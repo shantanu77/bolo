@@ -82,7 +82,25 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  await resetAiGeneratedCategories(session.user.id)
+
   return NextResponse.json({ transcript, structured })
+}
+
+async function resetAiGeneratedCategories(userId: string) {
+  await execute(
+    `UPDATE user_scenarios us
+     INNER JOIN user_categories uc ON uc.id = us.category_id
+     SET us.is_active = 0, us.category_id = NULL
+     WHERE us.user_id = ? AND uc.user_id = ? AND uc.source = 'ai_generated'`,
+    [userId, userId]
+  ).catch(err => console.warn('[bio] failed to archive AI scenarios:', err.message))
+
+  await execute(
+    `DELETE FROM user_categories
+     WHERE user_id = ? AND source = 'ai_generated'`,
+    [userId]
+  ).catch(err => console.warn('[bio] failed to clear AI categories:', err.message))
 }
 
 async function structureBio(transcript: string, userId: string) {

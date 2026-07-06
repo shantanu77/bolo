@@ -25,7 +25,7 @@ interface Scenario {
   category?: string
 }
 interface GeneratingState {
-  phase: 'idle' | 'recording' | 'processing' | 'done' | 'error'
+  phase: 'idle' | 'countdown' | 'recording' | 'processing' | 'done' | 'error'
   error?: string
   transcript?: string
   newCatName?: string
@@ -92,8 +92,10 @@ function PracticeContent() {
   const mediaRef  = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const timerRef  = useRef<NodeJS.Timeout | null>(null)
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null)
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [recSec, setRecSec] = useState(0)
+  const [voiceCountdown, setVoiceCountdown] = useState(3)
 
   useEffect(() => {
     if (searchParams.get('create') === '1' && generating.phase === 'idle') {
@@ -193,6 +195,9 @@ function PracticeContent() {
 
     return () => {
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current)
+      if (timerRef.current) clearInterval(timerRef.current)
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
+      mediaRef.current?.stream.getTracks().forEach(t => t.stop())
     }
   }, [pollGenerationJob])
 
@@ -200,12 +205,14 @@ function PracticeContent() {
   useEffect(() => {
     fetchJson('/api/generate/categories', { method: 'GET' })
       .then(async d => {
-        if (!d.categories?.length) {
-          // First time: generate
+        const categories = d.categories ?? []
+        const hasPersonaCategories = categories.some((cat: UserCategory) => cat.source === 'ai_generated')
+        if (!hasPersonaCategories) {
           const gen = await fetchJson('/api/generate/categories', { method: 'POST' })
-          setUserCats(gen.categories ?? [])
+          const generated = gen.categories ?? []
+          setUserCats(mergeCategories(categories, generated))
         } else {
-          setUserCats(d.categories)
+          setUserCats(categories)
         }
         setLoadingCats(false)
       })
@@ -242,14 +249,48 @@ function PracticeContent() {
       const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
       chunksRef.current = []
       recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-      recorder.start(250)
       mediaRef.current = recorder
       setRecSec(0)
-      timerRef.current = setInterval(() => setRecSec(s => s + 1), 1000)
-      setGenerating({ phase: 'recording' })
+      setVoiceCountdown(3)
+      setGenerating({ phase: 'countdown' })
+
+      let next = 3
+      countdownTimerRef.current = setInterval(() => {
+        next -= 1
+        if (next <= 0) {
+          if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
+          countdownTimerRef.current = null
+          recorder.start(250)
+          timerRef.current = setInterval(() => setRecSec(s => s + 1), 1000)
+          setGenerating({ phase: 'recording' })
+        } else {
+          setVoiceCountdown(next)
+        }
+      }, 1000)
     } catch {
       setGenerating({ phase: 'error', error: 'Microphone access denied.' })
     }
+  }
+
+  function cancelVoiceRequest(closePanel = false) {
+    if (timerRef.current) clearInterval(timerRef.current)
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
+    timerRef.current = null
+    countdownTimerRef.current = null
+
+    const recorder = mediaRef.current
+    if (recorder) {
+      recorder.ondataavailable = null
+      if (recorder.state !== 'inactive') recorder.stop()
+      recorder.stream.getTracks().forEach(t => t.stop())
+    }
+
+    mediaRef.current = null
+    chunksRef.current = []
+    setRecSec(0)
+    setVoiceCountdown(3)
+    setGenerating({ phase: 'idle' })
+    if (closePanel) setShowVoicePrompt(false)
   }
 
   async function stopVoiceAndGenerate() {
@@ -405,10 +446,12 @@ function PracticeContent() {
           <NewCategoryPanel
             generating={generating}
             recSec={recSec}
+            countdown={voiceCountdown}
             onStartVoice={startVoiceRequest}
             onStopVoice={stopVoiceAndGenerate}
+            onCancelVoice={() => cancelVoiceRequest(false)}
             onTextSubmit={submitTextRequest}
-            onCancel={() => { setShowVoicePrompt(false); setGenerating({ phase: 'idle' }) }}
+            onCancel={() => cancelVoiceRequest(true)}
           />
         )}
 
@@ -492,6 +535,12 @@ async function startGenerationJob(url: string, init: RequestInit) {
   return { job: data.job }
 }
 
+function mergeCategories(existing: UserCategory[], generated: UserCategory[]) {
+  const byId = new Map<string, UserCategory>()
+  for (const cat of [...generated, ...existing]) byId.set(cat.id, cat)
+  return Array.from(byId.values())
+}
+
 function GenerationProgress({ state, compact = false }: { state: GeneratingState; compact?: boolean }) {
   const percent = Math.max(5, Math.min(100, state.progressPercent ?? 10))
 
@@ -539,12 +588,14 @@ function GenerationProgress({ state, compact = false }: { state: GeneratingState
 }
 
 function NewCategoryPanel({
-  generating, recSec, onStartVoice, onStopVoice, onTextSubmit, onCancel
+  generating, recSec, countdown, onStartVoice, onStopVoice, onCancelVoice, onTextSubmit, onCancel
 }: {
   generating: GeneratingState
   recSec: number
+  countdown: number
   onStartVoice: () => void
   onStopVoice: () => void
+  onCancelVoice: () => void
   onTextSubmit: (text: string) => void
   onCancel: () => void
 }) {
@@ -578,18 +629,34 @@ function NewCategoryPanel({
         </div>
       )}
 
-      {mode === 'voice' && generating.phase === 'recording' && (
+      {mode === 'voice' && (generating.phase === 'countdown' || generating.phase === 'recording') && (
         <div className="text-center py-4">
-          <div className="relative flex items-center justify-center mb-4">
-            <div className="absolute w-24 h-24 rounded-full bg-red-100 animate-ping opacity-40" />
-            <button onClick={onStopVoice}
-              className="relative w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white text-xl shadow-lg transition flex items-center justify-center">
-              ⏹
-            </button>
-          </div>
-          <p className="text-red-500 font-semibold">{Math.floor(recSec / 60)}:{(recSec % 60).toString().padStart(2, '0')}</p>
-          <p className="text-xs text-gray-400 mt-1">Speak naturally… tap to stop</p>
+          <p className="mx-auto mb-4 max-w-sm text-sm text-gray-500">
+            <strong className="text-gray-800">Say the exact situation you want to practice and who you need to speak with.</strong>
+          </p>
+          {generating.phase === 'countdown' ? (
+            <>
+              <div className="mb-3 text-7xl font-black text-indigo-600 tabular-nums">{countdown}</div>
+              <p className="text-sm font-bold text-gray-800">Get ready to speak.</p>
+            </>
+          ) : (
+            <>
+              <div className="relative flex items-center justify-center mb-4">
+                <div className="absolute w-24 h-24 rounded-full bg-red-100 animate-ping opacity-40" />
+                <button onClick={onStopVoice}
+                  className="relative w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white text-xl shadow-lg transition flex items-center justify-center">
+                  ⏹
+                </button>
+              </div>
+              <p className="text-red-500 font-semibold">{Math.floor(recSec / 60)}:{(recSec % 60).toString().padStart(2, '0')}</p>
+              <p className="text-xs text-gray-400 mt-1">Recording. Tap stop when done.</p>
+            </>
+          )}
           <p className="text-xs text-indigo-500 mt-2 italic">e.g. &quot;I want to practice salary negotiation with my manager&quot;</p>
+          <button onClick={() => { onCancelVoice(); setMode('choose') }}
+            className="mt-4 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+            Cancel recording
+          </button>
         </div>
       )}
 

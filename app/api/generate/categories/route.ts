@@ -19,15 +19,21 @@ export async function POST(req: NextRequest) {
   // Don't regenerate if already done (unless forced)
   if (!forceRegenerate) {
     const existing = await query(
-      'SELECT id FROM user_categories WHERE user_id = ? LIMIT 1',
+      "SELECT id FROM user_categories WHERE user_id = ? AND source = 'ai_generated' LIMIT 1",
       [session.user.id]
     )
     if (existing.length > 0) {
       return NextResponse.json({ message: 'Categories already generated', skipped: true })
     }
   } else {
-    await execute('DELETE FROM user_scenarios WHERE user_id = ?', [session.user.id])
-    await execute('DELETE FROM user_categories WHERE user_id = ?', [session.user.id])
+    await execute(
+      `UPDATE user_scenarios us
+       INNER JOIN user_categories uc ON uc.id = us.category_id
+       SET us.is_active = 0, us.category_id = NULL
+       WHERE us.user_id = ? AND uc.user_id = ? AND uc.source = 'ai_generated'`,
+      [session.user.id, session.user.id]
+    )
+    await execute("DELETE FROM user_categories WHERE user_id = ? AND source = 'ai_generated'", [session.user.id])
   }
 
   const persona = await queryOne<{

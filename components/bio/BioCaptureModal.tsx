@@ -1,7 +1,7 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-type Phase = 'idle' | 'recording' | 'processing' | 'done' | 'error'
+type Phase = 'idle' | 'countdown' | 'recording' | 'processing' | 'done' | 'error'
 
 interface StructuredBio {
   summary?: string
@@ -33,6 +33,7 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
   const [phase, setPhase]   = useState<Phase>('idle')
   const [promptIdx]         = useState(0)
   const [recSec, setRecSec]       = useState(0)
+  const [countdown, setCountdown] = useState(3)
   const [transcript, setTranscript] = useState('')
   const [structured, setStructured] = useState<StructuredBio | null>(null)
   const [error, setError]         = useState('')
@@ -40,7 +41,15 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
   const mediaRef    = useRef<MediaRecorder | null>(null)
   const chunksRef   = useRef<Blob[]>([])
   const timerRef    = useRef<NodeJS.Timeout | null>(null)
+  const countdownRef = useRef<NodeJS.Timeout | null>(null)
   const startRef    = useRef<number>(0)
+
+  useEffect(() => {
+    return () => {
+      clearTimers()
+      mediaRef.current?.stream.getTracks().forEach(t => t.stop())
+    }
+  }, [])
 
   async function startRecording() {
     try {
@@ -48,12 +57,25 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
       const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
       chunksRef.current = []
       recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-      recorder.start(250)
       mediaRef.current = recorder
-      startRef.current  = Date.now()
       setRecSec(0)
-      setPhase('recording')
-      timerRef.current = setInterval(() => setRecSec(Math.round((Date.now() - startRef.current) / 1000)), 500)
+      setCountdown(3)
+      setPhase('countdown')
+
+      let next = 3
+      countdownRef.current = setInterval(() => {
+        next -= 1
+        if (next <= 0) {
+          if (countdownRef.current) clearInterval(countdownRef.current)
+          countdownRef.current = null
+          recorder.start(250)
+          startRef.current = Date.now()
+          setPhase('recording')
+          timerRef.current = setInterval(() => setRecSec(Math.round((Date.now() - startRef.current) / 1000)), 500)
+        } else {
+          setCountdown(next)
+        }
+      }, 1000)
     } catch {
       setError('Microphone access denied.')
       setPhase('error')
@@ -62,7 +84,7 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
 
   async function stopAndProcess() {
     if (!mediaRef.current) return
-    if (timerRef.current) clearInterval(timerRef.current)
+    clearTimers()
     setPhase('processing')
 
     const recorder = mediaRef.current
@@ -83,6 +105,28 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
     setTranscript(data.transcript)
     setStructured(data.structured)
     setPhase('done')
+  }
+
+  function cancelRecording() {
+    clearTimers()
+    const recorder = mediaRef.current
+    if (recorder) {
+      recorder.ondataavailable = null
+      if (recorder.state !== 'inactive') recorder.stop()
+      recorder.stream.getTracks().forEach(t => t.stop())
+    }
+    mediaRef.current = null
+    chunksRef.current = []
+    setRecSec(0)
+    setPhase('idle')
+    setError('')
+  }
+
+  function clearTimers() {
+    if (timerRef.current) clearInterval(timerRef.current)
+    if (countdownRef.current) clearInterval(countdownRef.current)
+    timerRef.current = null
+    countdownRef.current = null
   }
 
   function formatTime(s: number) {
@@ -107,36 +151,58 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
             <p className="text-gray-700 text-sm leading-relaxed">{PROMPTS[promptIdx]}</p>
           </div>
 
-          {phase === 'idle' && (
+          {(phase === 'idle' || phase === 'countdown' || phase === 'recording') && (
             <div className="text-center">
-              <p className="text-sm text-gray-400 mb-5">
-                Speak freely for 30–90 seconds. AuraXpress will structure what you say into your profile automatically.
+              <p className="text-sm text-gray-500 mb-5">
+                <strong className="text-gray-800">Speak about your role, responsibilities, people you work with, and communication challenges.</strong>
+                <br />
+                AuraXpress will structure this into your profile automatically.
               </p>
-              <button onClick={startRecording}
-                className="w-20 h-20 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-3xl shadow-lg shadow-indigo-200 transition flex items-center justify-center mx-auto">
-                🎤
-              </button>
-              <p className="text-xs text-gray-400 mt-3">Tap to start speaking</p>
-            </div>
-          )}
 
-          {phase === 'recording' && (
-            <div className="text-center">
-              <div className="relative flex items-center justify-center mb-4">
-                <div className="absolute w-28 h-28 rounded-full bg-red-100 animate-ping opacity-40" />
-                <button onClick={stopAndProcess}
-                  className="relative w-20 h-20 rounded-full bg-red-500 hover:bg-red-600 text-white text-2xl shadow-lg transition flex items-center justify-center">
-                  ⏹
-                </button>
-              </div>
-              <div className="flex items-center justify-center gap-1 mb-2">
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="w-1 rounded-full bg-red-400"
-                    style={{ height: `${8 + Math.random() * 16}px`, animation: `soundwave 0.6s ease-in-out infinite`, animationDelay: `${i * 0.1}s` }} />
-                ))}
-              </div>
-              <p className="text-red-500 font-semibold text-lg">{formatTime(recSec)}</p>
-              <p className="text-xs text-gray-400 mt-1">Recording… tap to stop when done</p>
+              {phase === 'idle' && (
+                <>
+                  <button onClick={startRecording}
+                    className="w-20 h-20 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-3xl shadow-lg shadow-indigo-200 transition flex items-center justify-center mx-auto">
+                    🎤
+                  </button>
+                  <p className="text-xs text-gray-400 mt-3">Tap to open recorder and prepare</p>
+                </>
+              )}
+
+              {phase === 'countdown' && (
+                <div>
+                  <div className="text-7xl font-black text-indigo-600 mb-3 tabular-nums">{countdown}</div>
+                  <p className="text-sm font-bold text-gray-800">Get ready to speak.</p>
+                  <button onClick={cancelRecording}
+                    className="mt-4 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+                    Cancel recording
+                  </button>
+                </div>
+              )}
+
+              {phase === 'recording' && (
+                <>
+                  <div className="relative flex items-center justify-center mb-4">
+                    <div className="absolute w-28 h-28 rounded-full bg-red-100 animate-ping opacity-40" />
+                    <button onClick={stopAndProcess}
+                      className="relative w-20 h-20 rounded-full bg-red-500 hover:bg-red-600 text-white text-2xl shadow-lg transition flex items-center justify-center">
+                      ⏹
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-center gap-1 mb-2">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="w-1 rounded-full bg-red-400"
+                        style={{ height: `${8 + Math.random() * 16}px`, animation: `soundwave 0.6s ease-in-out infinite`, animationDelay: `${i * 0.1}s` }} />
+                    ))}
+                  </div>
+                  <p className="text-red-500 font-semibold text-lg">{formatTime(recSec)}</p>
+                  <p className="text-xs text-gray-400 mt-1">Recording. Tap stop when done.</p>
+                  <button onClick={cancelRecording}
+                    className="mt-3 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+                    Cancel this take
+                  </button>
+                </>
+              )}
             </div>
           )}
 

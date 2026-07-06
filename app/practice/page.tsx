@@ -1,6 +1,7 @@
 'use client'
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 interface UserCategory {
   id: string
@@ -76,6 +77,7 @@ function ScenarioCard({ s, scenarioType }: { s: Scenario; scenarioType: 'global'
 }
 
 function PracticeContent() {
+  const searchParams = useSearchParams()
   const [userCats, setUserCats]         = useState<UserCategory[]>([])
   const [activeCat, setActiveCat]       = useState<string | null>(null)
   const [activeCatType, setActiveCatType] = useState<'user' | 'global'>('user')
@@ -92,6 +94,12 @@ function PracticeContent() {
   const timerRef  = useRef<NodeJS.Timeout | null>(null)
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [recSec, setRecSec] = useState(0)
+
+  useEffect(() => {
+    if (searchParams.get('create') === '1' && generating.phase === 'idle') {
+      setShowVoicePrompt(true)
+    }
+  }, [generating.phase, searchParams])
 
   const completeGeneration = useCallback((data: {
     job: GenerationJob

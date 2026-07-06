@@ -2,9 +2,6 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
-
-const BioCaptureModal = dynamic(() => import('@/components/bio/BioCaptureModal'), { ssr: false })
 
 interface Progress {
   user: { xp: number; level: { title: string; level: number }; nextLevel: { xpRequired: number } | null; streak_days: number }
@@ -21,38 +18,67 @@ interface BioStructured {
   evaluation_lens?: string
 }
 
+interface UserCategory {
+  id: string
+  source: string
+}
+
 export default function DashboardPage() {
   const { data: session } = useSession()
   const [progress, setProgress] = useState<Progress | null>(null)
   const [bio, setBio]           = useState<{ transcript: string; structured: BioStructured } | null | undefined>(undefined)
-  const [showBioModal, setShowBioModal] = useState(false)
+  const [categories, setCategories] = useState<UserCategory[]>([])
 
   useEffect(() => {
     fetch('/api/progress').then(r => r.json()).then(d => setProgress(d))
     fetch('/api/bio').then(r => r.json()).then(d => setBio(d.bio ?? null))
+    fetch('/api/generate/categories').then(r => r.json()).then(d => setCategories(d.categories ?? [])).catch(() => null)
   }, [])
 
   const recentScore = progress?.attempts?.[0]?.score_overall
   const prevScore   = progress?.attempts?.[1]?.score_overall
   const delta       = recentScore && prevScore ? recentScore - prevScore : null
-
-  function handleBioDone(newBio: { transcript: string; structured: BioStructured }) {
-    setBio(newBio)
-    setShowBioModal(false)
-  }
+  const hasCustomCategory = categories.some(cat => cat.source === 'user_requested')
+  const showSetupGuide = bio === null || !hasCustomCategory
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto lg:mx-0">
-      {showBioModal && (
-        <BioCaptureModal onDone={handleBioDone} onClose={() => setShowBioModal(false)} />
-      )}
-
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-800">
           Good {getTimeOfDay()}, {session?.user?.name?.split(' ')[0]} 👋
         </h1>
         <p className="text-gray-500 mt-1">Ready to practice today?</p>
       </div>
+
+      {showSetupGuide && (
+        <div className="bg-white border border-indigo-100 rounded-2xl p-5 mb-6 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
+            <div className="flex-1">
+              <div className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-1">Start here</div>
+              <h2 className="text-lg font-bold text-gray-800">Build your personal practice system</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                AuraXpress becomes much more useful when it knows your role and the exact situations you want to practice.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:w-[28rem]">
+              <SetupStep
+                done={bio !== null && bio !== undefined}
+                title="Record voice bio"
+                text="Tell us about your work, responsibilities, and communication challenges."
+                href="/profile"
+                cta={bio ? 'Review profile' : 'Record now'}
+              />
+              <SetupStep
+                done={hasCustomCategory}
+                title="Create custom category"
+                text="Describe one real situation and generate practice scenarios for it."
+                href="/practice?create=1"
+                cta={hasCustomCategory ? 'Create another' : 'Create category'}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bio CTA — show if bio not yet recorded */}
       {bio === null && (
@@ -65,10 +91,10 @@ export default function DashboardPage() {
               AuraXpress uses this to tailor every scenario and evaluation specifically to you.
             </p>
           </div>
-          <button onClick={() => setShowBioModal(true)}
+          <Link href="/profile"
             className="shrink-0 px-5 py-2.5 bg-white text-indigo-700 font-semibold text-sm rounded-xl hover:bg-indigo-50 transition">
             Record now
-          </button>
+          </Link>
         </div>
       )}
 
@@ -85,10 +111,10 @@ export default function DashboardPage() {
             </div>
             <p className="text-xs text-gray-400 truncate mt-0.5">{bio.structured.summary}</p>
           </div>
-          <button onClick={() => setShowBioModal(true)}
+          <Link href="/profile"
             className="shrink-0 text-xs text-indigo-500 hover:text-indigo-700 transition px-3 py-1.5 border border-indigo-100 rounded-lg">
             Update
-          </button>
+          </Link>
         </div>
       )}
 
@@ -159,6 +185,37 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function SetupStep({
+  done, title, text, href, cta,
+}: {
+  done: boolean
+  title: string
+  text: string
+  href: string
+  cta: string
+}) {
+  return (
+    <Link
+      href={href}
+      className={`block rounded-xl border p-4 transition ${
+        done
+          ? 'border-green-100 bg-green-50 hover:border-green-200'
+          : 'border-indigo-100 bg-indigo-50 hover:border-indigo-200'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className={`text-xs font-semibold uppercase tracking-wide ${done ? 'text-green-600' : 'text-indigo-600'}`}>
+          {done ? 'Done' : 'Recommended'}
+        </div>
+        <span className={`text-sm font-bold ${done ? 'text-green-600' : 'text-indigo-600'}`}>{done ? '✓' : '→'}</span>
+      </div>
+      <div className="mt-2 text-sm font-semibold text-gray-800">{title}</div>
+      <p className="mt-1 text-xs leading-relaxed text-gray-500">{text}</p>
+      <div className={`mt-3 text-xs font-semibold ${done ? 'text-green-700' : 'text-indigo-700'}`}>{cta}</div>
+    </Link>
   )
 }
 

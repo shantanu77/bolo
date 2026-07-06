@@ -38,7 +38,7 @@ const PLANS = [
     period: 'per month',
     desc: 'For professionals serious about improving their communication.',
     cta: 'Start Pro free for 7 days',
-    ctaHref: '/signup',
+    ctaHref: '/billing',
     highlight: true,
     features: [
       'Unlimited practice sessions',

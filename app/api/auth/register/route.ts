@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
   const id   = randomUUID()
 
   await execute(
-    'INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)',
+    `INSERT INTO users (id, name, email, password_hash, subscription_tier, subscription_ends)
+     VALUES (?, ?, ?, ?, 'pro_trial', DATE_ADD(NOW(), INTERVAL 7 DAY))`,
     [id, name.trim(), email.toLowerCase(), hash]
   )
 

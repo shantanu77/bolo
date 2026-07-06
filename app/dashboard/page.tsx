@@ -22,17 +22,25 @@ interface UserCategory {
   id: string
   source: string
 }
+interface BillingStatus {
+  subscription_tier: string
+  subscription_ends: string | null
+  isActive: boolean
+  isTrial: boolean
+}
 
 export default function DashboardPage() {
   const { data: session } = useSession()
   const [progress, setProgress] = useState<Progress | null>(null)
   const [bio, setBio]           = useState<{ transcript: string; structured: BioStructured } | null | undefined>(undefined)
   const [categories, setCategories] = useState<UserCategory[]>([])
+  const [billing, setBilling] = useState<BillingStatus | null>(null)
 
   useEffect(() => {
     fetch('/api/progress').then(r => r.json()).then(d => setProgress(d))
     fetch('/api/bio').then(r => r.json()).then(d => setBio(d.bio ?? null))
     fetch('/api/generate/categories').then(r => r.json()).then(d => setCategories(d.categories ?? [])).catch(() => null)
+    fetch('/api/billing/status').then(r => r.json()).then(d => setBilling(d)).catch(() => null)
   }, [])
 
   const recentScore = progress?.attempts?.[0]?.score_overall
@@ -77,6 +85,26 @@ export default function DashboardPage() {
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {billing && !billing.isActive && (
+        <div className="bg-white border border-orange-100 rounded-2xl p-5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex-1">
+            <div className="text-xs font-semibold uppercase tracking-wide text-orange-500 mb-1">
+              {billing.isTrial ? 'Trial finished' : 'Upgrade available'}
+            </div>
+            <h2 className="text-lg font-bold text-gray-800">Continue with AuraXpress Pro</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Keep unlimited practice, personalised categories, custom category creation, and full analytics active.
+            </p>
+          </div>
+          <Link
+            href="/billing"
+            className="shrink-0 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+          >
+            Pay ₹499
+          </Link>
         </div>
       )}
 

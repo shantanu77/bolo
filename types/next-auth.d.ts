@@ -5,6 +5,8 @@ declare module 'next-auth' {
     id: string
     subscription_tier: string
     subscription_ends?: string | null
+    user_role?: string
+    account_status?: string
     xp: number
     level: number
     streak_days: number
@@ -23,6 +25,8 @@ declare module 'next-auth/jwt' {
     id: string
     subscription_tier: string
     subscription_ends?: string | null
+    user_role?: string
+    account_status?: string
     xp: number
     level: number
     streak_days: number

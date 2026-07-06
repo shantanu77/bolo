@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   subscription_tier VARCHAR(20) NOT NULL DEFAULT 'free',
   subscription_ends DATETIME,
+  user_role      VARCHAR(20) NOT NULL DEFAULT 'user',
+  account_status VARCHAR(20) NOT NULL DEFAULT 'active',
   xp            INT NOT NULL DEFAULT 0,
   level         INT NOT NULL DEFAULT 1,
   streak_days   INT NOT NULL DEFAULT 0,
@@ -138,6 +140,8 @@ CREATE INDEX idx_attempts_session ON attempts(session_id);
 CREATE INDEX idx_sessions_user   ON sessions(user_id);
 CREATE INDEX idx_mastery_user    ON scenario_mastery(user_id);
 CREATE INDEX idx_monthly_xp_month ON monthly_xp(month_year);
+CREATE INDEX idx_users_role ON users(user_role);
+CREATE INDEX idx_users_status ON users(account_status);
 
 CREATE TABLE IF NOT EXISTS user_preferences (
   user_id    VARCHAR(36) PRIMARY KEY,

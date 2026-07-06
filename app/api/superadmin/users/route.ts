@@ -1,0 +1,231 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import nodemailer from 'nodemailer'
+import { randomUUID } from 'crypto'
+import { authOptions } from '@/lib/auth'
+import { execute, query, queryOne } from '@/lib/db'
+import { ensureUserAdminColumns, isSuperadminUser } from '@/lib/admin'
+import { ensurePaymentOrdersTable } from '@/lib/billing'
+
+const USER_STATUSES = new Set(['active', 'suspended'])
+const SUBSCRIPTION_TYPES = new Set(['free', 'pro_trial', 'pro'])
+const USER_ROLES = new Set(['user', 'superadmin'])
+
+export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!isSuperadminUser(session?.user)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  await ensureUserAdminColumns()
+  await ensurePaymentOrdersTable()
+
+  const { searchParams } = new URL(req.url)
+  const search = searchParams.get('search')?.trim() ?? ''
+  const like = `%${search}%`
+
+  const users = await query(
+    `SELECT
+       u.id, u.name, u.email, u.subscription_tier, u.subscription_ends,
+       u.user_role, u.account_status, u.xp, u.level, u.streak_days,
+       u.created_at, u.last_practiced,
+       COALESCE(sess.session_count, 0) as session_count,
+       COALESCE(att.attempt_count, 0) as attempt_count,
+       att.last_attempt_at,
+       pay.last_paid_at,
+       COALESCE(pay.paid_amount_paise, 0) as paid_amount_paise
+     FROM users u
+     LEFT JOIN (
+       SELECT user_id, COUNT(*) as session_count
+       FROM sessions GROUP BY user_id
+     ) sess ON sess.user_id = u.id
+     LEFT JOIN (
+       SELECT user_id, COUNT(*) as attempt_count, MAX(created_at) as last_attempt_at
+       FROM attempts GROUP BY user_id
+     ) att ON att.user_id = u.id
+     LEFT JOIN (
+       SELECT user_id, MAX(paid_at) as last_paid_at, SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as paid_amount_paise
+       FROM payment_orders GROUP BY user_id
+     ) pay ON pay.user_id = u.id
+     WHERE (? = '' OR u.name LIKE ? OR u.email LIKE ?)
+     ORDER BY u.created_at DESC
+     LIMIT 200`,
+    [search, like, like]
+  )
+
+  return NextResponse.json({ users })
+}
+
+export async function PATCH(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!isSuperadminUser(session?.user)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  await ensureUserAdminColumns()
+  await ensurePaymentOrdersTable()
+
+  const body = await req.json()
+  const action = body.action
+  const userId = clean(body.userId, 36)
+  if (!userId) return NextResponse.json({ error: 'userId is required' }, { status: 400 })
+
+  const user = await queryOne<{ id: string; name: string; email: string }>(
+    'SELECT id, name, email FROM users WHERE id = ?',
+    [userId]
+  )
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+  if (action === 'update_user') {
+    const accountStatus = clean(body.account_status, 20)
+    const subscriptionTier = clean(body.subscription_tier, 20)
+    const userRole = clean(body.user_role, 20)
+
+    if (!USER_STATUSES.has(accountStatus)) return NextResponse.json({ error: 'Invalid account status' }, { status: 400 })
+    if (!SUBSCRIPTION_TYPES.has(subscriptionTier)) return NextResponse.json({ error: 'Invalid subscription type' }, { status: 400 })
+    if (!USER_ROLES.has(userRole)) return NextResponse.json({ error: 'Invalid user role' }, { status: 400 })
+
+    await execute(
+      `UPDATE users
+       SET account_status = ?, subscription_tier = ?, user_role = ?
+       WHERE id = ?`,
+      [accountStatus, subscriptionTier, userRole, userId]
+    )
+    return NextResponse.json({ success: true })
+  }
+
+  if (action === 'extend_trial') {
+    const days = clampNumber(body.days, 1, 365, 7)
+    await execute(
+      `UPDATE users
+       SET subscription_tier = 'pro_trial',
+           account_status = 'active',
+           subscription_ends = DATE_ADD(GREATEST(COALESCE(subscription_ends, NOW()), NOW()), INTERVAL ? DAY)
+       WHERE id = ?`,
+      [days, userId]
+    )
+    return NextResponse.json({ success: true })
+  }
+
+  if (action === 'manual_payment') {
+    const amountRupees = clampNumber(body.amount_rupees, 1, 1000000, 499)
+    const days = clampNumber(body.days, 1, 3650, 30)
+    const notes = clean(body.notes, 500)
+    const amountPaise = Math.round(amountRupees * 100)
+    const receipt = `manual_${Date.now()}`.slice(0, 40)
+    const orderId = `manual_${randomUUID()}`
+    const paymentId = `manual_${randomUUID()}`
+
+    await execute(
+      `INSERT INTO payment_orders
+       (user_id, plan, amount, currency, receipt, razorpay_order_id, razorpay_payment_id, status, error_message, paid_at)
+       VALUES (?, 'pro_manual', ?, 'INR', ?, ?, ?, 'paid', ?, NOW())`,
+      [userId, amountPaise, receipt, orderId, paymentId, notes || null]
+    )
+
+    await execute(
+      `UPDATE users
+       SET subscription_tier = 'pro',
+           account_status = 'active',
+           subscription_ends = DATE_ADD(GREATEST(COALESCE(subscription_ends, NOW()), NOW()), INTERVAL ? DAY)
+       WHERE id = ?`,
+      [days, userId]
+    )
+
+    if (body.send_receipt === true) {
+      await sendReceiptEmail({
+        to: user.email,
+        name: user.name,
+        amountRupees,
+        days,
+        receipt,
+        notes,
+      })
+    }
+
+    return NextResponse.json({ success: true, receipt })
+  }
+
+  if (action === 'send_receipt') {
+    const amountRupees = clampNumber(body.amount_rupees, 1, 1000000, 499)
+    const days = clampNumber(body.days, 1, 3650, 30)
+    const receipt = clean(body.receipt, 80) || `receipt_${Date.now()}`
+    const notes = clean(body.notes, 500)
+    await sendReceiptEmail({
+      to: user.email,
+      name: user.name,
+      amountRupees,
+      days,
+      receipt,
+      notes,
+    })
+    return NextResponse.json({ success: true })
+  }
+
+  return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+}
+
+async function sendReceiptEmail(params: {
+  to: string
+  name: string
+  amountRupees: number
+  days: number
+  receipt: string
+  notes: string
+}) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: Number(process.env.EMAIL_PORT) || 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_FROM,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  })
+
+  const subject = `AuraXpress payment receipt - ${params.receipt}`
+  const text = `Hi ${params.name},
+
+We have received your AuraXpress Pro payment.
+
+Receipt: ${params.receipt}
+Amount: ₹${params.amountRupees}
+Access added: ${params.days} days
+${params.notes ? `Notes: ${params.notes}\n` : ''}
+Thank you,
+AuraXpress
+`
+
+  await transporter.sendMail({
+    from: `"AuraXpress Billing" <${process.env.EMAIL_FROM}>`,
+    to: params.to,
+    subject,
+    text,
+    html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+      <p>Hi ${escapeHtml(params.name)},</p>
+      <p>We have received your <strong>AuraXpress Pro</strong> payment.</p>
+      <table style="border-collapse:collapse;margin:16px 0">
+        <tr><td style="padding:6px 12px;color:#6b7280">Receipt</td><td style="padding:6px 12px"><strong>${escapeHtml(params.receipt)}</strong></td></tr>
+        <tr><td style="padding:6px 12px;color:#6b7280">Amount</td><td style="padding:6px 12px">₹${params.amountRupees}</td></tr>
+        <tr><td style="padding:6px 12px;color:#6b7280">Access added</td><td style="padding:6px 12px">${params.days} days</td></tr>
+      </table>
+      ${params.notes ? `<p>${escapeHtml(params.notes)}</p>` : ''}
+      <p>Thank you,<br/>AuraXpress</p>
+    </div>`,
+  })
+}
+
+function clean(value: unknown, maxLength: number) {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
+}
+
+function clampNumber(value: unknown, min: number, max: number, fallback: number) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return fallback
+  return Math.max(min, Math.min(max, Math.round(num)))
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;')
+}

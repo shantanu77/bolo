@@ -15,6 +15,7 @@ const NAV = [
   { href: '/billing',     label: 'Billing',      icon: '💳' },
   { href: '/profile',     label: 'Profile',      icon: '⚙️' },
 ]
+const ADMIN_NAV = { href: '/superadmin', label: 'Admin', icon: '🛠️' }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname()
@@ -22,6 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const xp   = session?.user?.xp ?? 0
   const { current, next } = getLevelForXp(xp)
   const pct  = next ? Math.round(((xp - current.xpRequired) / (next.xpRequired - current.xpRequired)) * 100) : 100
+  const navItems = session?.user?.user_role === 'superadmin' ? [...NAV, ADMIN_NAV] : NAV
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
@@ -43,7 +45,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <nav className="px-2 pb-2 flex gap-1 overflow-x-auto">
-          {NAV.map(n => (
+          {navItems.map(n => (
             <Link key={n.href} href={n.href}
               className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition ${
                 path === n.href || (n.href !== '/dashboard' && path.startsWith(n.href))
@@ -67,7 +69,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {NAV.map(n => (
+          {navItems.map(n => (
             <Link key={n.href} href={n.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
                 path === n.href || (n.href !== '/dashboard' && path.startsWith(n.href))

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
 import { execute, queryOne } from '@/lib/db'
+import { ensureUserAdminColumns } from '@/lib/admin'
 
 export async function POST(req: NextRequest) {
   const { name, email, password } = await req.json()
@@ -18,12 +19,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
   }
 
+  await ensureUserAdminColumns()
+
   const hash = await bcrypt.hash(password, 12)
   const id   = randomUUID()
 
   await execute(
-    `INSERT INTO users (id, name, email, password_hash, subscription_tier, subscription_ends)
-     VALUES (?, ?, ?, ?, 'pro_trial', DATE_ADD(NOW(), INTERVAL 7 DAY))`,
+    `INSERT INTO users (id, name, email, password_hash, subscription_tier, subscription_ends, user_role, account_status)
+     VALUES (?, ?, ?, ?, 'pro_trial', DATE_ADD(NOW(), INTERVAL 7 DAY), 'user', 'active')`,
     [id, name.trim(), email.toLowerCase(), hash]
   )
 

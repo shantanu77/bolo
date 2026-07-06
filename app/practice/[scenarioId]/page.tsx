@@ -3,7 +3,7 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-type Phase = 'loading' | 'ready' | 'recording' | 'processing' | 'feedback' | 'error'
+type Phase = 'loading' | 'ready' | 'countdown' | 'recording' | 'processing' | 'feedback' | 'error'
 type ProcessingStep = 'transcribing' | 'evaluating' | 'saving'
 
 interface Scenario {
@@ -101,6 +101,7 @@ function PracticeSessionContent() {
   const [recordingDuration, setRecordingDuration] = useState(0)
   const [recordingSpeed, setRecordingSpeed] = useState(1)
   const [recordingSec, setRecordingSec] = useState(0)
+  const [recordingCountdown, setRecordingCountdown] = useState(3)
   const [processingStep, setProcessingStep] = useState<ProcessingStep>('transcribing')
   const [errorMsg, setErrorMsg] = useState('')
   const [studyGuide, setStudyGuide] = useState<StudyGuide | null>(null)
@@ -114,12 +115,15 @@ function PracticeSessionContent() {
   const mediaRef    = useRef<MediaRecorder | null>(null)
   const chunksRef   = useRef<Blob[]>([])
   const timerRef    = useRef<NodeJS.Timeout | null>(null)
+  const countdownRef = useRef<NodeJS.Timeout | null>(null)
   const startTimeRef = useRef<number>(0)
   const audioRef    = useRef<HTMLAudioElement | null>(null)
   const recordingAudioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     return () => {
+      clearRecordingTimers()
+      mediaRef.current?.stream.getTracks().forEach(t => t.stop())
       if (recordingUrl) URL.revokeObjectURL(recordingUrl)
     }
   }, [recordingUrl])
@@ -148,15 +152,27 @@ function PracticeSessionContent() {
       chunksRef.current = []
 
       recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-      recorder.start(250)
       mediaRef.current    = recorder
-      startTimeRef.current = Date.now()
       setRecordingSec(0)
-      setPhase('recording')
+      setRecordingCountdown(3)
+      setPhase('countdown')
 
-      timerRef.current = setInterval(() => {
-        setRecordingSec(Math.round((Date.now() - startTimeRef.current) / 1000))
-      }, 500)
+      let next = 3
+      countdownRef.current = setInterval(() => {
+        next -= 1
+        if (next <= 0) {
+          if (countdownRef.current) clearInterval(countdownRef.current)
+          countdownRef.current = null
+          recorder.start(250)
+          startTimeRef.current = Date.now()
+          setPhase('recording')
+          timerRef.current = setInterval(() => {
+            setRecordingSec(Math.round((Date.now() - startTimeRef.current) / 1000))
+          }, 500)
+        } else {
+          setRecordingCountdown(next)
+        }
+      }, 1000)
     } catch {
       setErrorMsg('Microphone access denied. Please allow microphone access and try again.')
       setPhase('error')
@@ -165,7 +181,7 @@ function PracticeSessionContent() {
 
   async function stopRecording() {
     if (!mediaRef.current) return
-    if (timerRef.current) clearInterval(timerRef.current)
+    clearRecordingTimers()
 
     const recorder = mediaRef.current
     setPhase('processing')
@@ -215,6 +231,13 @@ function PracticeSessionContent() {
       setErrorMsg(err instanceof Error ? err.message : 'Could not process your response. Please try again.')
       setPhase('error')
     }
+  }
+
+  function clearRecordingTimers() {
+    if (timerRef.current) clearInterval(timerRef.current)
+    if (countdownRef.current) clearInterval(countdownRef.current)
+    timerRef.current = null
+    countdownRef.current = null
   }
 
   function playTTS() {
@@ -346,7 +369,7 @@ function PracticeSessionContent() {
         </div>
       </div>
 
-      {(phase === 'ready' || phase === 'recording') && (
+      {(phase === 'ready' || phase === 'countdown' || phase === 'recording') && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 text-center">
           {phase === 'ready' ? (
             <>
@@ -357,6 +380,12 @@ function PracticeSessionContent() {
                 🎤
               </button>
               <p className="text-xs text-gray-400 mt-4">Tap to start recording</p>
+            </>
+          ) : phase === 'countdown' ? (
+            <>
+              <p className="text-sm font-bold text-gray-800 mb-4">Get ready to answer.</p>
+              <div className="text-7xl font-black text-indigo-600 tabular-nums">{recordingCountdown}</div>
+              <p className="text-xs text-gray-400 mt-4">Recording will start automatically</p>
             </>
           ) : (
             <>

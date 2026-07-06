@@ -105,6 +105,7 @@ function PracticeSessionContent() {
   const [errorMsg, setErrorMsg] = useState('')
   const [studyGuide, setStudyGuide] = useState<StudyGuide | null>(null)
   const [studyGuideTopic, setStudyGuideTopic] = useState('')
+  const [studyGuideId, setStudyGuideId] = useState('')
   const [studyGuideLoading, setStudyGuideLoading] = useState('')
   const [studyGuideError, setStudyGuideError] = useState('')
   const [showReviewQuestion, setShowReviewQuestion] = useState(false)
@@ -263,6 +264,7 @@ function PracticeSessionContent() {
     setIsPlayingRecording(false)
     setStudyGuide(null)
     setStudyGuideTopic('')
+    setStudyGuideId('')
     setStudyGuideError('')
     setShowReviewQuestion(false)
   }
@@ -270,6 +272,7 @@ function PracticeSessionContent() {
   async function createStudyGuide(label: string, item: DimensionEvidence) {
     if (!scenario) return
     setStudyGuide(null)
+    setStudyGuideId('')
     setStudyGuideError('')
     setShowReviewQuestion(false)
     setStudyGuideTopic(item.study_topic || label)
@@ -290,6 +293,7 @@ function PracticeSessionContent() {
         }),
       })
       setStudyGuide(data.guide)
+      setStudyGuideId(data.savedGuide?.id ?? '')
     } catch (err) {
       setStudyGuideError(err instanceof Error ? err.message : 'Could not create study guide.')
     } finally {
@@ -450,6 +454,7 @@ function PracticeSessionContent() {
             <StudyGuidePanel
               guide={studyGuide}
               topic={studyGuideTopic}
+              savedGuideId={studyGuideId}
               loading={Boolean(studyGuideLoading)}
               error={studyGuideError}
               showReviewQuestion={showReviewQuestion}
@@ -673,10 +678,11 @@ function EvidenceCard({
 }
 
 function StudyGuidePanel({
-  guide, topic, loading, error, showReviewQuestion, onReview,
+  guide, topic, savedGuideId, loading, error, showReviewQuestion, onReview,
 }: {
   guide: StudyGuide | null
   topic: string
+  savedGuideId: string
   loading: boolean
   error: string
   showReviewQuestion: boolean
@@ -701,6 +707,18 @@ function StudyGuidePanel({
 
       {guide && (
         <div className="space-y-5">
+          {savedGuideId && (
+            <div className="flex flex-col gap-2 rounded-xl border border-green-100 bg-green-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-medium text-green-800">Saved to Learning Guide.</p>
+              <Link
+                href={`/learning-guides?guide=${savedGuideId}`}
+                className="text-sm font-semibold text-green-700 hover:text-green-900"
+              >
+                Open saved guide
+              </Link>
+            </div>
+          )}
+
           <p className="text-sm text-gray-600 leading-relaxed">{guide.objective}</p>
 
           <div className="grid gap-3">

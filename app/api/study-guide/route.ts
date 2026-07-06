@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import OpenAI from 'openai'
 import { authOptions } from '@/lib/auth'
+import { saveLearningGuide } from '@/lib/learning-guides'
 import { logUsage } from '@/lib/usage'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -71,7 +72,16 @@ Make the guide specific enough to act on, but generic enough that the user can r
   })
 
   const guide = JSON.parse(completion.choices[0].message.content || '{}')
-  return NextResponse.json({ guide })
+  const guideId = await saveLearningGuide({
+    userId: session.user.id,
+    dimension,
+    topic,
+    scenarioQuestion,
+    evidence,
+    guide,
+  })
+
+  return NextResponse.json({ guide, savedGuide: { id: guideId } })
 }
 
 function clean(value: unknown) {

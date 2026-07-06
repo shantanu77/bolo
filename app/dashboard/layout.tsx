@@ -10,6 +10,7 @@ const CoachChat = dynamic(() => import('@/components/CoachChat'), { ssr: false }
 const NAV = [
   { href: '/dashboard',   label: 'Home',         icon: '🏠' },
   { href: '/practice',    label: 'Practice',     icon: '🎤' },
+  { href: '/learning-guides', label: 'Learning Guide', icon: '📚' },
   { href: '/progress',    label: 'Progress',     icon: '📈' },
   { href: '/leaderboard', label: 'Leaderboard',  icon: '🏆' },
   { href: '/billing',     label: 'Billing',      icon: '💳' },

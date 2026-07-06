@@ -205,3 +205,20 @@ CREATE TABLE IF NOT EXISTS api_usage (
 CREATE INDEX idx_api_usage_user ON api_usage(user_id);
 CREATE INDEX idx_api_usage_created ON api_usage(created_at);
 CREATE INDEX idx_api_usage_call_type ON api_usage(call_type);
+
+CREATE TABLE IF NOT EXISTS learning_guides (
+  id                       VARCHAR(36) PRIMARY KEY,
+  user_id                  VARCHAR(36) NOT NULL,
+  title                    VARCHAR(255) NOT NULL,
+  topic                    VARCHAR(255),
+  dimension                VARCHAR(50),
+  source_scenario_question TEXT,
+  evidence_json            JSON,
+  guide_json               JSON NOT NULL,
+  created_at               DATETIME NOT NULL DEFAULT NOW(),
+  updated_at               DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW(),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_learning_guides_user_created ON learning_guides(user_id, created_at);
+CREATE INDEX idx_learning_guides_dimension ON learning_guides(dimension);

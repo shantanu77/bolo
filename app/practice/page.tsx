@@ -1,5 +1,5 @@
 'use client'
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
 interface UserCategory {
@@ -23,7 +23,24 @@ interface Scenario {
   is_today_daily?: boolean
   category?: string
 }
-interface GeneratingState { phase: 'idle' | 'recording' | 'processing' | 'done' | 'error'; error?: string; transcript?: string; newCatName?: string }
+interface GeneratingState {
+  phase: 'idle' | 'recording' | 'processing' | 'done' | 'error'
+  error?: string
+  transcript?: string
+  newCatName?: string
+  jobId?: string
+  progressStep?: string
+  progressPercent?: number
+}
+
+interface GenerationJob {
+  id: string
+  status: 'pending' | 'processing' | 'succeeded' | 'failed'
+  user_request?: string | null
+  progress_step: string
+  progress_percent: number
+  error_message?: string | null
+}
 
 const GLOBAL_CATEGORIES = [
   { id: 'professional_daily', label: 'Professional Day-to-Day', icon: '💼', desc: 'Standups, updates, daily communication' },
@@ -31,6 +48,8 @@ const GLOBAL_CATEGORIES = [
   { id: 'interview',          label: 'Interview Prep',          icon: '🎯', desc: 'Tell me about yourself, tough questions' },
   { id: 'social',             label: 'Social & Networking',     icon: '🤝', desc: 'Small talk, introductions, office events' },
 ]
+
+const CATEGORY_JOB_STORAGE_KEY = 'auraxpress:category-generation-job'
 
 function Stars({ count }: { count: number }) {
   return <span className="text-yellow-400 text-sm">{'★'.repeat(count || 0)}{'☆'.repeat(5 - (count || 0))}</span>
@@ -71,7 +90,103 @@ function PracticeContent() {
   const mediaRef  = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const timerRef  = useRef<NodeJS.Timeout | null>(null)
+  const pollTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [recSec, setRecSec] = useState(0)
+
+  const completeGeneration = useCallback((data: {
+    job: GenerationJob
+    category?: UserCategory
+    scenarios?: Scenario[]
+  }) => {
+    if (!data.category) return
+
+    const category = {
+      id: data.category.id,
+      name: data.category.name,
+      description: data.category.description,
+      icon: data.category.icon,
+      source: data.category.source ?? 'user_requested',
+      scenario_count: data.category.scenario_count ?? data.scenarios?.length ?? 0,
+    }
+
+    setUserCats(prev => prev.some(cat => cat.id === category.id) ? prev : [...prev, category])
+    setGenerating({
+      phase: 'done',
+      transcript: data.job.user_request ?? undefined,
+      newCatName: category.name,
+      progressStep: 'Ready',
+      progressPercent: 100,
+    })
+    setShowVoicePrompt(false)
+    setActiveCat(category.id)
+    setActiveCatType('user')
+    setScenarios(data.scenarios ?? [])
+    setLoadingScenarios(false)
+    localStorage.removeItem(CATEGORY_JOB_STORAGE_KEY)
+  }, [])
+
+  const pollGenerationJob = useCallback(async (jobId: string) => {
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current)
+
+    try {
+      const data = await fetchJson(`/api/generate/scenarios/${jobId}`) as {
+        job: GenerationJob
+        category?: UserCategory
+        scenarios?: Scenario[]
+      }
+
+      if (data.job.status === 'succeeded') {
+        completeGeneration(data)
+        return
+      }
+
+      if (data.job.status === 'failed') {
+        setGenerating({
+          phase: 'error',
+          error: data.job.error_message ?? 'Failed to generate. Please try again.',
+          progressStep: data.job.progress_step,
+          progressPercent: data.job.progress_percent,
+        })
+        localStorage.removeItem(CATEGORY_JOB_STORAGE_KEY)
+        return
+      }
+
+      setGenerating({
+        phase: 'processing',
+        jobId,
+        transcript: data.job.user_request ?? undefined,
+        progressStep: data.job.progress_step,
+        progressPercent: data.job.progress_percent,
+      })
+      pollTimerRef.current = setTimeout(() => pollGenerationJob(jobId), 2000)
+    } catch {
+      setGenerating(prev => ({
+        ...prev,
+        phase: 'processing',
+        jobId,
+        progressStep: 'Still working. Reconnecting...',
+        progressPercent: prev.progressPercent ?? 15,
+      }))
+      pollTimerRef.current = setTimeout(() => pollGenerationJob(jobId), 4000)
+    }
+  }, [completeGeneration])
+
+  useEffect(() => {
+    const jobId = localStorage.getItem(CATEGORY_JOB_STORAGE_KEY)
+    if (jobId) {
+      setGenerating({
+        phase: 'processing',
+        jobId,
+        progressStep: 'Checking generation status',
+        progressPercent: 10,
+      })
+      pollGenerationJob(jobId)
+    }
+
+    return () => {
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current)
+    }
+  }, [pollGenerationJob])
 
   // Load user categories; auto-generate if none yet
   useEffect(() => {
@@ -132,39 +247,57 @@ function PracticeContent() {
   async function stopVoiceAndGenerate() {
     if (!mediaRef.current) return
     if (timerRef.current) clearInterval(timerRef.current)
-    setGenerating({ phase: 'processing' })
+    setGenerating({ phase: 'processing', progressStep: 'Uploading voice note', progressPercent: 5 })
 
     const recorder = mediaRef.current
     recorder.stop()
     recorder.stream.getTracks().forEach(t => t.stop())
     await new Promise<void>(resolve => { recorder.onstop = () => resolve() })
 
-    const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
-    const res  = await fetch('/api/generate/scenarios', { method: 'POST', body: blob, headers: { 'Content-Type': 'audio/webm' } })
-    const data = await res.json()
-
-    if (!res.ok) {
-      setGenerating({ phase: 'error', error: data.error ?? 'Failed to generate. Please try again.' })
-      return
+    try {
+      const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+      const data = await startGenerationJob('/api/generate/scenarios', {
+        method: 'POST',
+        body: blob,
+        headers: { 'Content-Type': 'audio/webm' },
+      })
+      trackGenerationJob(data.job)
+      setShowVoicePrompt(false)
+    } catch (err) {
+      setGenerating({
+        phase: 'error',
+        error: err instanceof Error ? err.message : 'Failed to start generation. Please try again.',
+      })
     }
-
-    setUserCats(prev => [...prev, { id: data.category.id, ...data.category, source: 'user_requested', scenario_count: data.scenarios?.length ?? 0 }])
-    setGenerating({ phase: 'done', transcript: data.userRequest, newCatName: data.category.name })
-    setShowVoicePrompt(false)
   }
 
   async function submitTextRequest(text: string) {
-    setGenerating({ phase: 'processing' })
-    const res  = await fetch('/api/generate/scenarios', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ request: text }),
+    setGenerating({ phase: 'processing', progressStep: 'Starting generation', progressPercent: 5 })
+    try {
+      const data = await startGenerationJob('/api/generate/scenarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request: text }),
+      })
+      trackGenerationJob(data.job)
+      setShowVoicePrompt(false)
+    } catch (err) {
+      setGenerating({
+        phase: 'error',
+        error: err instanceof Error ? err.message : 'Failed to start generation. Please try again.',
+      })
+    }
+  }
+
+  function trackGenerationJob(job: GenerationJob) {
+    localStorage.setItem(CATEGORY_JOB_STORAGE_KEY, job.id)
+    setGenerating({
+      phase: 'processing',
+      jobId: job.id,
+      progressStep: job.progress_step,
+      progressPercent: job.progress_percent,
     })
-    const data = await res.json()
-    if (!res.ok) { setGenerating({ phase: 'error', error: data.error ?? 'Failed.' }); return }
-    setUserCats(prev => [...prev, { id: data.category.id, ...data.category, source: 'user_requested', scenario_count: data.scenarios?.length ?? 0 }])
-    setGenerating({ phase: 'done', newCatName: data.category.name })
-    setShowVoicePrompt(false)
+    pollGenerationJob(job.id)
   }
 
   const activeCatObj = userCats.find(c => c.id === activeCat) ??
@@ -240,10 +373,7 @@ function PracticeContent() {
             </button>
           )}
           {generating.phase === 'processing' && (
-            <div className="text-center py-2">
-              <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-1" />
-              <p className="text-xs text-indigo-500">Creating…</p>
-            </div>
+            <GenerationProgress state={generating} compact />
           )}
           {generating.phase === 'done' && (
             <div className="bg-green-50 rounded-lg p-2 text-xs text-green-700">
@@ -274,7 +404,11 @@ function PracticeContent() {
           />
         )}
 
-        {!showVoicePrompt && !activeCat && (
+        {generating.phase === 'processing' && (
+          <GenerationProgress state={generating} />
+        )}
+
+        {!showVoicePrompt && !activeCat && generating.phase !== 'processing' && (
           <EmptyState onCreate={() => setShowVoicePrompt(true)} />
         )}
 
@@ -342,6 +476,58 @@ async function fetchJson(url: string, init?: RequestInit) {
   }
 
   return data
+}
+
+async function startGenerationJob(url: string, init: RequestInit) {
+  const data = await fetchJson(url, init) as { job?: GenerationJob }
+  if (!data.job?.id) throw new Error('Could not start category generation.')
+  return { job: data.job }
+}
+
+function GenerationProgress({ state, compact = false }: { state: GeneratingState; compact?: boolean }) {
+  const percent = Math.max(5, Math.min(100, state.progressPercent ?? 10))
+
+  if (compact) {
+    return (
+      <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-3">
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-4 shrink-0 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-indigo-700">{state.progressStep ?? 'Creating category'}</p>
+            <div className="mt-1 h-1.5 rounded-full bg-indigo-100 overflow-hidden">
+              <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${percent}%` }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-6 max-w-xl rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-bold text-gray-800">Creating your practice category</h3>
+            <span className="text-xs font-semibold text-indigo-600">{percent}%</span>
+          </div>
+          <p className="mt-1 text-sm text-gray-500">{state.progressStep ?? 'Creating category'}</p>
+          {state.transcript && (
+            <p className="mt-2 line-clamp-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500">
+              {state.transcript}
+            </p>
+          )}
+          <div className="mt-3 h-2 rounded-full bg-indigo-50 overflow-hidden">
+            <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${percent}%` }} />
+          </div>
+          <p className="mt-2 text-xs text-gray-400">
+            You can switch apps or lock the phone after this has started. The server will keep working.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function NewCategoryPanel({

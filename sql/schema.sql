@@ -138,3 +138,29 @@ CREATE INDEX idx_attempts_session ON attempts(session_id);
 CREATE INDEX idx_sessions_user   ON sessions(user_id);
 CREATE INDEX idx_mastery_user    ON scenario_mastery(user_id);
 CREATE INDEX idx_monthly_xp_month ON monthly_xp(month_year);
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+  user_id    VARCHAR(36) PRIMARY KEY,
+  timezone   VARCHAR(64) NOT NULL DEFAULT 'Asia/Kolkata',
+  created_at DATETIME NOT NULL DEFAULT NOW(),
+  updated_at DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW(),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS category_generation_jobs (
+  id               VARCHAR(36) PRIMARY KEY,
+  user_id          VARCHAR(36) NOT NULL,
+  status           VARCHAR(20) NOT NULL DEFAULT 'pending',
+  input_type       VARCHAR(20) NOT NULL DEFAULT 'text',
+  user_request     TEXT,
+  progress_step    VARCHAR(255) NOT NULL DEFAULT 'Queued',
+  progress_percent INT NOT NULL DEFAULT 0,
+  category_id      VARCHAR(36),
+  error_message    TEXT,
+  created_at       DATETIME NOT NULL DEFAULT NOW(),
+  updated_at       DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW(),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_category_generation_jobs_user_status ON category_generation_jobs(user_id, status);
+CREATE INDEX idx_category_generation_jobs_category ON category_generation_jobs(category_id);

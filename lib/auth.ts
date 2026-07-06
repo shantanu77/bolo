@@ -52,13 +52,16 @@ export const authOptions: NextAuthOptions = {
     newUser: '/onboarding',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id                = user.id
         token.subscription_tier = (user as DbUser & { subscription_tier: string }).subscription_tier
         token.xp                = (user as DbUser).xp
         token.level             = (user as DbUser).level
         token.streak_days       = (user as DbUser).streak_days
+      }
+      if (trigger === 'update' && typeof session?.user?.name === 'string') {
+        token.name = session.user.name
       }
       return token
     },

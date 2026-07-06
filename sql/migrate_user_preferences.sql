@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS user_preferences (
+  user_id    VARCHAR(36) PRIMARY KEY,
+  timezone   VARCHAR(64) NOT NULL DEFAULT 'Asia/Kolkata',
+  created_at DATETIME NOT NULL DEFAULT NOW(),
+  updated_at DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW(),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

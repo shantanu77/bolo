@@ -12,6 +12,7 @@ const NAV = [
   { href: '/practice',    label: 'Practice',     icon: '🎤' },
   { href: '/progress',    label: 'Progress',     icon: '📈' },
   { href: '/leaderboard', label: 'Leaderboard',  icon: '🏆' },
+  { href: '/profile',     label: 'Profile',      icon: '⚙️' },
 ]
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -81,7 +82,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* User profile + logout */}
         <div className="px-4 py-4 border-t border-gray-100 space-y-3">
           {/* Avatar + name + level */}
-          <div className="flex items-center gap-2.5">
+          <Link href="/profile" className="flex items-center gap-2.5 rounded-lg p-1 -m-1 hover:bg-gray-50 transition">
             <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
               {session?.user?.name?.[0]?.toUpperCase() ?? '?'}
             </div>
@@ -89,7 +90,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="text-sm font-semibold text-gray-800 truncate">{session?.user?.name}</div>
               <div className="text-xs text-indigo-500 font-medium">Lv.{current.level} · {current.title}</div>
             </div>
-          </div>
+          </Link>
 
           {/* XP bar */}
           <div>

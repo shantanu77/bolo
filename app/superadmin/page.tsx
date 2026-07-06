@@ -21,6 +21,12 @@ interface AdminUser {
   last_attempt_at: string | null
   last_paid_at: string | null
   paid_amount_paise: number
+  usage_call_count: number
+  usage_total_tokens: number
+  usage_cost_usd: number | string
+  gpt_cost_usd: number | string
+  tts_cost_usd: number | string
+  stt_cost_usd: number | string
 }
 
 const SUBSCRIPTION_TYPES = ['free', 'pro_trial', 'pro']
@@ -186,7 +192,7 @@ export default function SuperadminPage() {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm">
-        <table className="min-w-[1180px] w-full text-left text-sm">
+        <table className="min-w-[1320px] w-full text-left text-sm">
           <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-400">
             <tr>
               <th className="px-4 py-3">User</th>
@@ -194,15 +200,16 @@ export default function SuperadminPage() {
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Usage</th>
+              <th className="px-4 py-3">AI Credits</th>
               <th className="px-4 py-3">Paid</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Loading users...</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Loading users...</td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No users found.</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">No users found.</td></tr>
             ) : users.map(user => (
               <tr key={user.id} className="align-top">
                 <td className="px-4 py-4">
@@ -242,6 +249,16 @@ export default function SuperadminPage() {
                   <div>{user.session_count} sessions</div>
                   <div>{user.attempt_count} attempts</div>
                   <div>{user.xp} XP</div>
+                </td>
+                <td className="px-4 py-4 text-xs text-gray-500">
+                  <div className="font-semibold text-gray-700">
+                    ${toMoney(user.usage_cost_usd)} / ₹{toInr(user.usage_cost_usd)}
+                  </div>
+                  <div>{user.usage_call_count} calls</div>
+                  <div>{Number(user.usage_total_tokens || 0).toLocaleString()} tokens</div>
+                  <div className="mt-1 text-gray-400">
+                    GPT ${toMoney(user.gpt_cost_usd)} · TTS ${toMoney(user.tts_cost_usd)} · STT ${toMoney(user.stt_cost_usd)}
+                  </div>
                 </td>
                 <td className="px-4 py-4 text-xs text-gray-500">
                   <div>₹{Math.round((Number(user.paid_amount_paise) || 0) / 100)}</div>
@@ -356,4 +373,12 @@ function formatDate(value: string) {
   } catch {
     return value
   }
+}
+
+function toMoney(value: number | string) {
+  return Number(value || 0).toFixed(4)
+}
+
+function toInr(value: number | string) {
+  return Math.round(Number(value || 0) * 83.5)
 }

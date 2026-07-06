@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { queryOne, query } from '@/lib/db'
 import { parseJsonArray, parseJsonObject } from '@/lib/json'
 import OpenAI from 'openai'
+import { logUsage } from '@/lib/usage'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -89,6 +90,15 @@ COACHING GUIDELINES:
     ],
     temperature: 0.7,
     max_tokens: 400,
+  })
+
+  logUsage({
+    userId: session.user.id,
+    callType: 'coach_chat',
+    model: 'gpt-4o',
+    promptTokens: response.usage?.prompt_tokens ?? 0,
+    completionTokens: response.usage?.completion_tokens ?? 0,
+    totalTokens: response.usage?.total_tokens ?? 0,
   })
 
   const reply = response.choices[0].message.content ?? 'Sorry, I could not generate a response. Please try again.'

@@ -3,10 +3,11 @@ import OpenAI from 'openai'
 import { Readable } from 'stream'
 import { execute, query, queryOne } from '@/lib/db'
 import { parseJsonObject } from '@/lib/json'
+import { logUsage } from '@/lib/usage'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-interface DgResponse { results?: { channels?: Array<{ alternatives?: Array<{ transcript: string }> }> } }
+interface DgResponse { metadata?: { duration?: number }; results?: { channels?: Array<{ alternatives?: Array<{ transcript: string }> }> } }
 
 export interface CategoryGenerationJob {
   id: string
@@ -106,7 +107,7 @@ async function processCategoryGenerationJob(params: {
     let userRequest = params.userRequest ?? ''
     if (params.audio) {
       await updateJob(params.jobId, params.userId, 'processing', 'Transcribing voice note', 20)
-      userRequest = await transcribeAudio(params.audio)
+      userRequest = await transcribeAudio(params.audio, params.userId)
     }
 
     if (!userRequest || userRequest.length < 5) {
@@ -125,7 +126,7 @@ async function processCategoryGenerationJob(params: {
     }>('SELECT * FROM personas WHERE user_id = ?', [params.userId])
 
     const bioStructured = parseJsonObject(persona?.bio_structured)
-    const result = await generateFromRequest(userRequest, persona, bioStructured)
+    const result = await generateFromRequest(userRequest, persona, bioStructured, params.userId)
 
     await updateJob(params.jobId, params.userId, 'processing', 'Saving category', 70)
     const catId = crypto.randomUUID()
@@ -182,7 +183,7 @@ async function updateJob(
   )
 }
 
-async function transcribeAudio(audio: Buffer) {
+async function transcribeAudio(audio: Buffer, userId: string) {
   const deepgram = new DeepgramClient({ apiKey: process.env.DEEPGRAM_API_KEY! })
   const dgResponse = await deepgram.listen.v1.media.transcribeFile(
     Readable.from(audio),
@@ -190,6 +191,12 @@ async function transcribeAudio(audio: Buffer) {
     { model: 'nova-2', language: 'en-IN', smart_format: true, punctuate: true } as any
   )
   const dgData = dgResponse as unknown as DgResponse
+  logUsage({
+    userId,
+    callType: 'custom_category_transcription',
+    model: 'nova-2',
+    units: dgData?.metadata?.duration ?? 60,
+  })
   return dgData?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? ''
 }
 
@@ -203,7 +210,8 @@ async function getNextSortOrder(userId: string): Promise<number> {
 async function generateFromRequest(
   userRequest: string,
   persona: Record<string, unknown> | null,
-  bio: Record<string, unknown> | null
+  bio: Record<string, unknown> | null,
+  userId: string
 ) {
   const personaCtx = [
     bio?.summary              && `Role summary: ${bio.summary}`,
@@ -253,6 +261,15 @@ Make scenarios progressively challenging. Tailor to the user's seniority and ind
     }],
     response_format: { type: 'json_object' },
     temperature: 0.8,
+  })
+
+  logUsage({
+    userId,
+    callType: 'custom_category_generation',
+    model: 'gpt-4o',
+    promptTokens: completion.usage?.prompt_tokens ?? 0,
+    completionTokens: completion.usage?.completion_tokens ?? 0,
+    totalTokens: completion.usage?.total_tokens ?? 0,
   })
 
   return JSON.parse(completion.choices[0].message.content || '{}') as {

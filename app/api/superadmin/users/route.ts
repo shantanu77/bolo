@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth'
 import { execute, query, queryOne } from '@/lib/db'
 import { ensureUserAdminColumns, isSuperadminUser } from '@/lib/admin'
 import { ensurePaymentOrdersTable } from '@/lib/billing'
+import { ensureApiUsageTable } from '@/lib/usage'
 
 const USER_STATUSES = new Set(['active', 'suspended'])
 const SUBSCRIPTION_TYPES = new Set(['free', 'pro_trial', 'pro'])
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
 
   await ensureUserAdminColumns()
   await ensurePaymentOrdersTable()
+  await ensureApiUsageTable()
 
   const { searchParams } = new URL(req.url)
   const search = searchParams.get('search')?.trim() ?? ''
@@ -31,7 +33,13 @@ export async function GET(req: NextRequest) {
        COALESCE(att.attempt_count, 0) as attempt_count,
        att.last_attempt_at,
        pay.last_paid_at,
-       COALESCE(pay.paid_amount_paise, 0) as paid_amount_paise
+       COALESCE(pay.paid_amount_paise, 0) as paid_amount_paise,
+       COALESCE(usage_stats.usage_call_count, 0) as usage_call_count,
+       COALESCE(usage_stats.usage_total_tokens, 0) as usage_total_tokens,
+       COALESCE(usage_stats.usage_cost_usd, 0) as usage_cost_usd,
+       COALESCE(usage_stats.gpt_cost_usd, 0) as gpt_cost_usd,
+       COALESCE(usage_stats.tts_cost_usd, 0) as tts_cost_usd,
+       COALESCE(usage_stats.stt_cost_usd, 0) as stt_cost_usd
      FROM users u
      LEFT JOIN (
        SELECT user_id, COUNT(*) as session_count
@@ -45,6 +53,19 @@ export async function GET(req: NextRequest) {
        SELECT user_id, MAX(paid_at) as last_paid_at, SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as paid_amount_paise
        FROM payment_orders GROUP BY user_id
      ) pay ON pay.user_id = u.id
+     LEFT JOIN (
+       SELECT
+         user_id,
+         COUNT(*) as usage_call_count,
+         SUM(total_tokens) as usage_total_tokens,
+         SUM(cost_usd) as usage_cost_usd,
+         SUM(CASE WHEN model = 'gpt-4o' THEN cost_usd ELSE 0 END) as gpt_cost_usd,
+         SUM(CASE WHEN model = 'tts-1' THEN cost_usd ELSE 0 END) as tts_cost_usd,
+         SUM(CASE WHEN model = 'nova-2' THEN cost_usd ELSE 0 END) as stt_cost_usd
+       FROM api_usage
+       WHERE user_id IS NOT NULL
+       GROUP BY user_id
+     ) usage_stats ON usage_stats.user_id = u.id
      WHERE (? = '' OR u.name LIKE ? OR u.email LIKE ?)
      ORDER BY u.created_at DESC
      LIMIT 200`,
@@ -60,6 +81,7 @@ export async function PATCH(req: NextRequest) {
 
   await ensureUserAdminColumns()
   await ensurePaymentOrdersTable()
+  await ensureApiUsageTable()
 
   const body = await req.json()
   const action = body.action

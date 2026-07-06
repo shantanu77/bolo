@@ -19,6 +19,8 @@ export async function logUsage(params: {
 }) {
   const { userId, callType, model, promptTokens = 0, completionTokens = 0, totalTokens, units } = params
 
+  await ensureApiUsageTable()
+
   const totalTok = totalTokens ?? (promptTokens + completionTokens)
   const pricing  = PRICING[model] ?? { input: 0, output: 0 }
 
@@ -37,4 +39,23 @@ export async function logUsage(params: {
      VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?)`,
     [userId ?? null, callType, model, promptTokens, completionTokens, totalTok, costUsd.toFixed(6)]
   ).catch(err => console.warn('[usage] failed to log:', err.message))
+}
+
+export async function ensureApiUsageTable() {
+  await execute(`
+    CREATE TABLE IF NOT EXISTS api_usage (
+      id                VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      user_id           VARCHAR(36),
+      call_type         VARCHAR(50) NOT NULL,
+      model             VARCHAR(50) NOT NULL,
+      prompt_tokens     INT NOT NULL DEFAULT 0,
+      completion_tokens INT NOT NULL DEFAULT 0,
+      total_tokens      INT NOT NULL DEFAULT 0,
+      cost_usd          DECIMAL(12,6) NOT NULL DEFAULT 0,
+      created_at        DATETIME NOT NULL DEFAULT NOW(),
+      INDEX idx_api_usage_user (user_id),
+      INDEX idx_api_usage_created (created_at),
+      INDEX idx_api_usage_call_type (call_type)
+    )
+  `).catch(err => console.warn('[usage] failed to ensure table:', err.message))
 }

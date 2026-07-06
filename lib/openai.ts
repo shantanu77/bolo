@@ -62,6 +62,7 @@ export async function evaluateResponse(
   wpm: number,
   scenario: ScenarioContext,
   persona: PersonaContext | null,
+  userId?: string | null,
 ): Promise<EvaluationResult> {
   const fillerTotal = Object.values(fillerWords).reduce((a, b) => a + b, 0)
   const wordCount   = transcript.split(' ').filter(Boolean).length
@@ -178,6 +179,7 @@ Scoring guide: 1=poor, 2=needs work, 3=acceptable, 4=good, 5=excellent. Most res
   })
 
   logUsage({
+    userId,
     callType: 'evaluation',
     model:    'gpt-4o',
     promptTokens:     response.usage?.prompt_tokens     ?? 0,
@@ -219,7 +221,7 @@ function normalizeEvidence(
   }))
 }
 
-export async function generateTTS(text: string, _sessionId: string, attemptId: string): Promise<string> {
+export async function generateTTS(text: string, _sessionId: string, attemptId: string, userId?: string | null): Promise<string> {
   const storagePath = path.join(process.cwd(), 'storage', 'tts')
   fs.mkdirSync(storagePath, { recursive: true })
 
@@ -233,7 +235,7 @@ export async function generateTTS(text: string, _sessionId: string, attemptId: s
     speed:  0.95,
   })
 
-  logUsage({ callType: 'tts', model: 'tts-1', units: text.length })
+  logUsage({ userId, callType: 'tts', model: 'tts-1', units: text.length })
 
   const buffer = Buffer.from(await response.arrayBuffer())
   fs.writeFileSync(filePath, buffer)

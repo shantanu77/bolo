@@ -62,6 +62,7 @@ Make the guide specific enough to act on, but generic enough that the user can r
   })
 
   logUsage({
+    userId: session.user.id,
     callType: 'study_guide',
     model: 'gpt-4o',
     promptTokens: completion.usage?.prompt_tokens ?? 0,

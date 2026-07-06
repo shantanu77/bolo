@@ -6,13 +6,14 @@ import { parseJsonObject } from '@/lib/json'
 import { DeepgramClient } from '@deepgram/sdk'
 import OpenAI from 'openai'
 import { Readable } from 'stream'
+import { logUsage } from '@/lib/usage'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 interface DgWord { word: string }
 interface DgAlternative { transcript: string; words: DgWord[] }
 interface DgChannel { alternatives: DgAlternative[] }
-interface DgResponse { results?: { channels?: DgChannel[] } }
+interface DgResponse { metadata?: { duration?: number }; results?: { channels?: DgChannel[] } }
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -51,13 +52,21 @@ export async function POST(req: NextRequest) {
   )
   const dgData  = dgResponse as unknown as DgResponse
   const transcript = dgData?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? ''
+  const duration = dgData?.metadata?.duration ?? 60
+
+  logUsage({
+    userId: session.user.id,
+    callType: 'bio_transcription',
+    model: 'nova-2',
+    units: duration,
+  })
 
   if (!transcript || transcript.length < 20) {
     return NextResponse.json({ error: 'Could not understand the recording. Please speak clearly and try again.' }, { status: 422 })
   }
 
   // 2. Structure via GPT-4o
-  const structured = await structureBio(transcript)
+  const structured = await structureBio(transcript, session.user.id)
 
   // 3. Save to personas (upsert)
   const existing = await queryOne('SELECT id FROM personas WHERE user_id = ?', [session.user.id])
@@ -76,7 +85,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ transcript, structured })
 }
 
-async function structureBio(transcript: string) {
+async function structureBio(transcript: string, userId: string) {
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [{
@@ -118,6 +127,15 @@ Guidelines:
     }],
     response_format: { type: 'json_object' },
     temperature: 0.3,
+  })
+
+  logUsage({
+    userId,
+    callType: 'bio_structure',
+    model: 'gpt-4o',
+    promptTokens: completion.usage?.prompt_tokens ?? 0,
+    completionTokens: completion.usage?.completion_tokens ?? 0,
+    totalTokens: completion.usage?.total_tokens ?? 0,
   })
 
   return JSON.parse(completion.choices[0].message.content || '{}')

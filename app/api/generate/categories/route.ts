@@ -5,6 +5,7 @@ import { query, execute, queryOne } from '@/lib/db'
 import { parseJsonArray, parseJsonObject } from '@/lib/json'
 import OpenAI from 'openai'
 import { randomUUID } from 'crypto'
+import { logUsage } from '@/lib/usage'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   const bioStructured = parseJsonObject(persona?.bio_structured)
 
-  const categories = await generateCategories(persona, bioStructured)
+  const categories = await generateCategories(persona, bioStructured, session.user.id)
 
   // Save categories
   for (let i = 0; i < categories.length; i++) {
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     )
 
     // Generate 3 scenarios per category
-    const scenarios = await generateScenariosForCategory(cat, persona, bioStructured)
+    const scenarios = await generateScenariosForCategory(cat, persona, bioStructured, session.user.id)
     for (let j = 0; j < scenarios.length; j++) {
       const sc = scenarios[j]
       await execute(
@@ -96,7 +97,8 @@ export async function GET() {
 
 async function generateCategories(
   persona: Record<string, unknown> | null,
-  bio: Record<string, unknown> | null
+  bio: Record<string, unknown> | null,
+  userId: string
 ) {
   const context = buildPersonaContext(persona, bio)
 
@@ -135,6 +137,15 @@ Order by priority descending. Be specific, not generic.`,
     temperature: 0.7,
   })
 
+  logUsage({
+    userId,
+    callType: 'category_generation',
+    model: 'gpt-4o',
+    promptTokens: completion.usage?.prompt_tokens ?? 0,
+    completionTokens: completion.usage?.completion_tokens ?? 0,
+    totalTokens: completion.usage?.total_tokens ?? 0,
+  })
+
   const parsed = JSON.parse(completion.choices[0].message.content || '{}')
   return (parsed.categories ?? parsed) as Array<{
     name: string; description: string; icon: string; register: string; priority: number
@@ -144,7 +155,8 @@ Order by priority descending. Be specific, not generic.`,
 async function generateScenariosForCategory(
   category: { name: string; description: string; register: string },
   persona: Record<string, unknown> | null,
-  bio: Record<string, unknown> | null
+  bio: Record<string, unknown> | null,
+  userId: string
 ) {
   const context = buildPersonaContext(persona, bio)
 
@@ -186,6 +198,15 @@ The questions should be things that genuinely challenge someone at this person's
     }],
     response_format: { type: 'json_object' },
     temperature: 0.8,
+  })
+
+  logUsage({
+    userId,
+    callType: 'scenario_generation',
+    model: 'gpt-4o',
+    promptTokens: completion.usage?.prompt_tokens ?? 0,
+    completionTokens: completion.usage?.completion_tokens ?? 0,
+    totalTokens: completion.usage?.total_tokens ?? 0,
   })
 
   const parsed = JSON.parse(completion.choices[0].message.content || '{}')

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
 import { DeepgramClient } from '@deepgram/sdk'
 import { Readable } from 'stream'
+import { authOptions } from '@/lib/auth'
+import { logUsage } from '@/lib/usage'
 
 const FILLERS = ['um', 'uh', 'like', 'basically', 'actually', 'you know', 'so', 'right', 'okay', 'hmm']
 
@@ -11,6 +14,9 @@ interface DgResponse { metadata?: { duration?: number }; results?: { channels?: 
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const body  = await req.arrayBuffer()
     const audio = Buffer.from(body)
 
@@ -52,6 +58,13 @@ export async function POST(req: NextRequest) {
     const duration    = data?.metadata?.duration ?? 1
     const wpm         = duration > 0 ? Math.round((wordCount / duration) * 60) : 0
     const fillerCount = Object.values(fillerWords).reduce((a, b) => a + b, 0)
+
+    logUsage({
+      userId: session.user.id,
+      callType: 'transcription',
+      model: 'nova-2',
+      units: duration,
+    })
 
     return NextResponse.json({ transcript, fillerWords, fillerCount, wpm, wordCount, duration })
   } catch (err) {

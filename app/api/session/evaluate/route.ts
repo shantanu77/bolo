@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     bio_structured:  parseJsonObject(persona.bio_structured),
   } : null
 
-  const evaluation = await evaluateResponse(transcript, fillerWords, wpm, scenario!, parsedPersona)
+  const evaluation = await evaluateResponse(transcript, fillerWords, wpm, scenario!, parsedPersona, session.user.id)
 
   const attemptId = randomUUID()
   const fillerCount = Object.values(fillerWords).reduce((a: number, b) => a + (b as number), 0)
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
   ].filter(Boolean).join(' ')
 
   const [ttsPath, ,] = await Promise.all([
-    generateTTS(ttsText, sessionId, attemptId),
+    generateTTS(ttsText, sessionId, attemptId, session.user.id),
     execute(
       `INSERT INTO attempts (id, session_id, user_id, transcript, duration_sec, words_per_minute,
        filler_word_count, filler_words, score_clarity, score_fluency, score_vocabulary,

@@ -19,6 +19,8 @@ export interface SavedLearningGuide {
   title: string
   topic: string | null
   dimension: string | null
+  source_scenario_id: string | null
+  source_scenario_type: string | null
   source_scenario_question: string | null
   evidence_json: unknown
   guide_json: StudyGuideContent
@@ -34,6 +36,8 @@ export async function ensureLearningGuidesTable() {
       title                    VARCHAR(255) NOT NULL,
       topic                    VARCHAR(255),
       dimension                VARCHAR(50),
+      source_scenario_id       VARCHAR(36),
+      source_scenario_type     VARCHAR(20),
       source_scenario_question TEXT,
       evidence_json            JSON,
       guide_json               JSON NOT NULL,
@@ -44,12 +48,17 @@ export async function ensureLearningGuidesTable() {
       INDEX idx_learning_guides_dimension (dimension)
     )
   `)
+
+  await ensureColumn('source_scenario_id', 'VARCHAR(36)')
+  await ensureColumn('source_scenario_type', 'VARCHAR(20)')
 }
 
 export async function saveLearningGuide(params: {
   userId: string
   dimension: string
   topic: string
+  scenarioId?: string
+  scenarioType?: string
   scenarioQuestion: string
   evidence: string[]
   guide: StudyGuideContent
@@ -59,14 +68,16 @@ export async function saveLearningGuide(params: {
   const id = randomUUID()
   await execute(
     `INSERT INTO learning_guides
-     (id, user_id, title, topic, dimension, source_scenario_question, evidence_json, guide_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+     (id, user_id, title, topic, dimension, source_scenario_id, source_scenario_type, source_scenario_question, evidence_json, guide_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       params.userId,
       params.guide.title || params.topic || 'AI Study Guide',
       params.topic || null,
       params.dimension || null,
+      params.scenarioId || null,
+      params.scenarioType || null,
       params.scenarioQuestion || null,
       JSON.stringify(params.evidence ?? []),
       JSON.stringify(params.guide),
@@ -80,7 +91,7 @@ export async function listLearningGuides(userId: string) {
   await ensureLearningGuidesTable()
 
   const guides = await query<SavedLearningGuide>(
-    `SELECT id, user_id, title, topic, dimension, source_scenario_question,
+    `SELECT id, user_id, title, topic, dimension, source_scenario_id, source_scenario_type, source_scenario_question,
             evidence_json, guide_json, created_at, updated_at
      FROM learning_guides
      WHERE user_id = ?
@@ -96,7 +107,7 @@ export async function getLearningGuide(userId: string, guideId: string) {
   await ensureLearningGuidesTable()
 
   const guide = await queryOne<SavedLearningGuide>(
-    `SELECT id, user_id, title, topic, dimension, source_scenario_question,
+    `SELECT id, user_id, title, topic, dimension, source_scenario_id, source_scenario_type, source_scenario_question,
             evidence_json, guide_json, created_at, updated_at
      FROM learning_guides
      WHERE user_id = ? AND id = ?`,
@@ -127,5 +138,20 @@ function parseJson<T>(value: unknown, fallback: T): T {
     return JSON.parse(value) as T
   } catch {
     return fallback
+  }
+}
+
+async function ensureColumn(columnName: string, columnType: string) {
+  const existing = await queryOne<{ column_count: number }>(
+    `SELECT COUNT(*) as column_count
+     FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'learning_guides'
+       AND COLUMN_NAME = ?`,
+    [columnName],
+  )
+
+  if ((existing?.column_count ?? 0) === 0) {
+    await execute(`ALTER TABLE learning_guides ADD COLUMN ${columnName} ${columnType}`)
   }
 }

@@ -20,6 +20,8 @@ export async function POST(req: NextRequest) {
   const rewrittenSentence = clean(body.rewritten_sentence)
   const evidence: string[] = Array.isArray(body.evidence) ? body.evidence.map(clean).filter(Boolean).slice(0, 4) : []
   const scenarioQuestion = clean(body.scenario_question)
+  const scenarioId = clean(body.scenario_id, 36)
+  const scenarioType = ['global', 'user'].includes(body.scenario_type) ? body.scenario_type : 'global'
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o',
@@ -76,6 +78,8 @@ Make the guide specific enough to act on, but generic enough that the user can r
     userId: session.user.id,
     dimension,
     topic,
+    scenarioId,
+    scenarioType,
     scenarioQuestion,
     evidence,
     guide,
@@ -84,6 +88,6 @@ Make the guide specific enough to act on, but generic enough that the user can r
   return NextResponse.json({ guide, savedGuide: { id: guideId } })
 }
 
-function clean(value: unknown) {
-  return typeof value === 'string' ? value.trim().slice(0, 1200) : ''
+function clean(value: unknown, maxLength = 1200) {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
 }

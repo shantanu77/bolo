@@ -289,6 +289,8 @@ function PracticeSessionContent() {
           fix: item.fix,
           rewritten_sentence: item.rewritten_sentence,
           evidence: item.evidence,
+          scenario_id: scenario.id,
+          scenario_type: scenarioType,
           scenario_question: scenario.question,
         }),
       })

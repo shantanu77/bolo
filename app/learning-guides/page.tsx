@@ -21,6 +21,8 @@ interface SavedGuide {
   title: string
   topic: string | null
   dimension: string | null
+  source_scenario_id: string | null
+  source_scenario_type: string | null
   source_scenario_question: string | null
   evidence_json: string[]
   guide_json: StudyGuide
@@ -68,6 +70,9 @@ function LearningGuidesContent() {
     () => guides.find(guide => guide.id === selectedId) ?? null,
     [guides, selectedId],
   )
+  const reviewScenarioHref = selected?.source_scenario_id
+    ? `/practice/${selected.source_scenario_id}?type=${selected.source_scenario_type === 'user' ? 'user' : 'global'}`
+    : ''
 
   if (loading) return <div className="flex items-center justify-center h-full text-gray-400 text-sm">Loading learning guides...</div>
 
@@ -201,14 +206,26 @@ function LearningGuidesContent() {
                 )}
 
                 <div className="border-t border-gray-100 pt-4">
-                  {!showReviewQuestion ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowReviewQuestion(true)}
-                      className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
+                  {reviewScenarioHref ? (
+                    <Link
+                      href={reviewScenarioHref}
+                      className="block w-full rounded-xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-indigo-700"
                     >
                       Review my learning
-                    </button>
+                    </Link>
+                  ) : !showReviewQuestion ? (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setShowReviewQuestion(true)}
+                        className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
+                      >
+                        Review my learning
+                      </button>
+                      <p className="mt-2 text-center text-xs text-gray-400">
+                        This older guide does not have the original scenario link saved.
+                      </p>
+                    </div>
                   ) : (
                     <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
                       <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-500">Practice question</div>

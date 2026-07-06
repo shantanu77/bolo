@@ -212,6 +212,8 @@ CREATE TABLE IF NOT EXISTS learning_guides (
   title                    VARCHAR(255) NOT NULL,
   topic                    VARCHAR(255),
   dimension                VARCHAR(50),
+  source_scenario_id       VARCHAR(36),
+  source_scenario_type     VARCHAR(20),
   source_scenario_question TEXT,
   evidence_json            JSON,
   guide_json               JSON NOT NULL,

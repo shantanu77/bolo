@@ -32,6 +32,7 @@ interface SavedGuide {
 function LearningGuidesContent() {
   const searchParams = useSearchParams()
   const requestedGuide = searchParams.get('guide')
+  const isSpecificGuideView = Boolean(requestedGuide)
   const [guides, setGuides] = useState<SavedGuide[]>([])
   const [selectedId, setSelectedId] = useState('')
   const [loading, setLoading] = useState(true)
@@ -113,28 +114,30 @@ function LearningGuidesContent() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-          <aside className="space-y-2">
-            {guides.map(guide => (
-              <button
-                key={guide.id}
-                type="button"
-                onClick={() => setSelectedId(guide.id)}
-                className={`w-full rounded-xl border p-4 text-left transition ${
-                  selectedId === guide.id
-                    ? 'border-indigo-200 bg-indigo-50'
-                    : 'border-gray-100 bg-white hover:border-indigo-100 hover:bg-gray-50'
-                }`}
-              >
-                <div className="text-sm font-semibold text-gray-800">{guide.title}</div>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {guide.dimension && <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-indigo-600">{guide.dimension}</span>}
-                  {guide.topic && <span className="rounded-full bg-white px-2 py-0.5 text-xs text-gray-500">{guide.topic}</span>}
-                </div>
-                <div className="mt-2 text-xs text-gray-400">{formatGuideDate(guide.created_at)}</div>
-              </button>
-            ))}
-          </aside>
+        <div className={`grid gap-5 ${isSpecificGuideView ? 'lg:grid-cols-1' : 'lg:grid-cols-[320px_1fr]'}`}>
+          {!isSpecificGuideView && (
+            <aside className="space-y-2">
+              {guides.map(guide => (
+                <button
+                  key={guide.id}
+                  type="button"
+                  onClick={() => setSelectedId(guide.id)}
+                  className={`w-full rounded-xl border p-4 text-left transition ${
+                    selectedId === guide.id
+                      ? 'border-indigo-200 bg-indigo-50'
+                      : 'border-gray-100 bg-white hover:border-indigo-100 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="text-sm font-semibold text-gray-800">{guide.title}</div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {guide.dimension && <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-indigo-600">{guide.dimension}</span>}
+                    {guide.topic && <span className="rounded-full bg-white px-2 py-0.5 text-xs text-gray-500">{guide.topic}</span>}
+                  </div>
+                  <div className="mt-2 text-xs text-gray-400">{formatGuideDate(guide.created_at)}</div>
+                </button>
+              ))}
+            </aside>
+          )}
 
           {selected && (
             <main className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">

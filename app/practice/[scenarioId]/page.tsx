@@ -106,6 +106,7 @@ function PracticeSessionContent() {
   const [studyGuide, setStudyGuide] = useState<StudyGuide | null>(null)
   const [studyGuideTopic, setStudyGuideTopic] = useState('')
   const [studyGuideId, setStudyGuideId] = useState('')
+  const [createdStudyGuideIds, setCreatedStudyGuideIds] = useState<Record<string, string>>({})
   const [studyGuideLoading, setStudyGuideLoading] = useState('')
   const [studyGuideError, setStudyGuideError] = useState('')
   const [showReviewQuestion, setShowReviewQuestion] = useState(false)
@@ -265,12 +266,14 @@ function PracticeSessionContent() {
     setStudyGuide(null)
     setStudyGuideTopic('')
     setStudyGuideId('')
+    setCreatedStudyGuideIds({})
     setStudyGuideError('')
     setShowReviewQuestion(false)
   }
 
   async function createStudyGuide(label: string, item: DimensionEvidence) {
     if (!scenario) return
+    if (createdStudyGuideIds[label]) return
     setStudyGuide(null)
     setStudyGuideId('')
     setStudyGuideError('')
@@ -295,7 +298,9 @@ function PracticeSessionContent() {
         }),
       })
       setStudyGuide(data.guide)
-      setStudyGuideId(data.savedGuide?.id ?? '')
+      const savedId = data.savedGuide?.id ?? ''
+      setStudyGuideId(savedId)
+      if (savedId) setCreatedStudyGuideIds(prev => ({ ...prev, [label]: savedId }))
     } catch (err) {
       setStudyGuideError(err instanceof Error ? err.message : 'Could not create study guide.')
     } finally {
@@ -445,6 +450,7 @@ function PracticeSessionContent() {
                     label={DIM_LABELS[key]}
                     item={item}
                     loading={studyGuideLoading === DIM_LABELS[key]}
+                    savedGuideId={createdStudyGuideIds[DIM_LABELS[key]] ?? ''}
                     onCreateGuide={() => createStudyGuide(DIM_LABELS[key], item)}
                   />
                 ))}
@@ -621,11 +627,12 @@ function ProcessingRow({ active, done, label }: { active: boolean; done: boolean
 }
 
 function EvidenceCard({
-  label, item, loading, onCreateGuide,
+  label, item, loading, savedGuideId, onCreateGuide,
 }: {
   label: string
   item: DimensionEvidence
   loading: boolean
+  savedGuideId: string
   onCreateGuide: () => void
 }) {
   return (
@@ -669,10 +676,10 @@ function EvidenceCard({
         <button
           type="button"
           onClick={onCreateGuide}
-          disabled={loading}
+          disabled={loading || Boolean(savedGuideId)}
           className="shrink-0 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 disabled:opacity-60"
         >
-          {loading ? 'Creating guide...' : 'Create AI study guide'}
+          {loading ? 'Creating guide...' : savedGuideId ? 'Guide created' : 'Create AI study guide'}
         </button>
       </div>
     </div>

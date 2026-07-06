@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import OpenAI from 'openai'
 import { authOptions } from '@/lib/auth'
-import { saveLearningGuide } from '@/lib/learning-guides'
+import { getExistingLearningGuideForSource, saveLearningGuide } from '@/lib/learning-guides'
 import { logUsage } from '@/lib/usage'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -22,6 +22,23 @@ export async function POST(req: NextRequest) {
   const scenarioQuestion = clean(body.scenario_question)
   const scenarioId = clean(body.scenario_id, 36)
   const scenarioType = ['global', 'user'].includes(body.scenario_type) ? body.scenario_type : 'global'
+
+  if (scenarioId) {
+    const existingGuide = await getExistingLearningGuideForSource({
+      userId: session.user.id,
+      scenarioId,
+      scenarioType,
+      dimension,
+    })
+
+    if (existingGuide) {
+      return NextResponse.json({
+        guide: existingGuide.guide_json,
+        savedGuide: { id: existingGuide.id },
+        reused: true,
+      })
+    }
+  }
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o',

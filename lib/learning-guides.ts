@@ -117,6 +117,30 @@ export async function getLearningGuide(userId: string, guideId: string) {
   return guide ? normalizeLearningGuide(guide) : null
 }
 
+export async function getExistingLearningGuideForSource(params: {
+  userId: string
+  scenarioId: string
+  scenarioType: string
+  dimension: string
+}) {
+  await ensureLearningGuidesTable()
+
+  const guide = await queryOne<SavedLearningGuide>(
+    `SELECT id, user_id, title, topic, dimension, source_scenario_id, source_scenario_type, source_scenario_question,
+            evidence_json, guide_json, created_at, updated_at
+     FROM learning_guides
+     WHERE user_id = ?
+       AND source_scenario_id = ?
+       AND source_scenario_type = ?
+       AND dimension = ?
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [params.userId, params.scenarioId, params.scenarioType, params.dimension],
+  )
+
+  return guide ? normalizeLearningGuide(guide) : null
+}
+
 function normalizeLearningGuide(row: SavedLearningGuide): SavedLearningGuide {
   return {
     ...row,

@@ -39,6 +39,22 @@ const DIM_COLORS: Record<string, string> = {
   clarity: 'bg-blue-500', fluency: 'bg-green-500', vocabulary: 'bg-purple-500',
   structure: 'bg-yellow-500', confidence: 'bg-red-400', tone_match: 'bg-indigo-500',
 }
+const DIM_LINE_COLORS: Record<string, string> = {
+  clarity: '#3b82f6',
+  fluency: '#22c55e',
+  vocabulary: '#a855f7',
+  structure: '#eab308',
+  confidence: '#f87171',
+  tone_match: '#6366f1',
+}
+const DIM_SCORE_KEYS: Record<string, keyof Attempt> = {
+  clarity: 'score_clarity',
+  fluency: 'score_fluency',
+  vocabulary: 'score_vocabulary',
+  structure: 'score_structure',
+  confidence: 'score_confidence',
+  tone_match: 'score_tone',
+}
 const IST_TIME_ZONE = 'Asia/Kolkata'
 const recentSessionDateFormatter = new Intl.DateTimeFormat('en-IN', {
   day: 'numeric',
@@ -78,6 +94,7 @@ export default function ProgressPage() {
   const [data, setData]     = useState<ProgressData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedAttempt, setSelectedAttempt] = useState<Attempt | null>(null)
+  const [selectedDimension, setSelectedDimension] = useState('clarity')
 
   useEffect(() => {
     fetch('/api/progress').then(r => r.json()).then(d => { setData(d); setLoading(false) })
@@ -95,6 +112,15 @@ export default function ProgressPage() {
     : 0
 
   const worstDim = Object.entries(data.dimensionAvg).sort((a, b) => a[1] - b[1])[0]
+  const dimensionTrend = data.attempts
+    .slice()
+    .reverse()
+    .map((attempt, index) => ({
+      session: index + 1,
+      score: Number(attempt[DIM_SCORE_KEYS[selectedDimension]] ?? 0),
+      date: formatRecentSessionTime(attempt.created_at),
+      scenario: attempt.scenario_title ?? 'Practice session',
+    }))
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto lg:mx-0">
@@ -117,20 +143,37 @@ export default function ProgressPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
-          <h2 className="font-semibold text-gray-700 mb-5">Score by Dimension</h2>
+          <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="font-semibold text-gray-700">Score by Dimension</h2>
+            <p className="text-xs text-gray-400">Click a dimension to view its trend</p>
+          </div>
           <div className="space-y-4">
             {Object.entries(data.dimensionAvg).map(([dim, avg]) => (
-              <div key={dim}>
+              <button
+                key={dim}
+                type="button"
+                onClick={() => setSelectedDimension(dim)}
+                className={`block w-full rounded-xl p-2 text-left transition ${
+                  selectedDimension === dim ? 'bg-indigo-50 ring-1 ring-indigo-100' : 'hover:bg-gray-50'
+                }`}
+              >
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>{DIM_LABELS[dim]}</span>
+                  <span className={`font-semibold ${selectedDimension === dim ? 'text-indigo-700' : 'text-gray-600'}`}>{DIM_LABELS[dim]}</span>
                   <span className="font-semibold text-gray-700">{avg}/5</span>
                 </div>
                 <div className="h-2.5 bg-gray-100 rounded-full">
                   <div className={`h-2.5 rounded-full ${DIM_COLORS[dim]} transition-all duration-700`} style={{ width: `${(avg / 5) * 100}%` }} />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
+
+          <DimensionTrendChart
+            label={DIM_LABELS[selectedDimension]}
+            color={DIM_LINE_COLORS[selectedDimension]}
+            data={dimensionTrend}
+          />
+
           {worstDim && (
             <div className="mt-5 bg-orange-50 rounded-xl p-3 text-xs text-orange-700">
               <strong>Focus area:</strong> {DIM_LABELS[worstDim[0]]} is your lowest average — try scenarios with &quot;{worstDim[0]}&quot; as the communication goal.
@@ -250,6 +293,101 @@ export default function ProgressPage() {
         <SessionDetail attempt={selectedAttempt} onClose={() => setSelectedAttempt(null)} />
       )}
     </div>
+  )
+}
+
+function DimensionTrendChart({
+  label, color, data,
+}: {
+  label: string
+  color: string
+  data: Array<{ session: number; score: number; date: string; scenario: string }>
+}) {
+  if (data.length < 2) {
+    return (
+      <div className="mt-5 rounded-xl border border-gray-100 bg-gray-50 p-4">
+        <div className="text-sm font-semibold text-gray-800">{label} trend</div>
+        <p className="mt-1 text-xs text-gray-400">Complete at least two sessions to see progress over time.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-5 rounded-xl border border-gray-100 bg-gray-50 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold text-gray-800">{label} trend</div>
+          <div className="text-xs text-gray-400">Oldest to newest, last {data.length} sessions</div>
+        </div>
+        <div className="text-xs font-semibold text-gray-500">
+          Latest: <span className="text-gray-800">{data[data.length - 1]?.score ?? 0}/5</span>
+        </div>
+      </div>
+      <div className="h-56">
+        <DimensionSvgChart data={data} color={color} />
+      </div>
+    </div>
+  )
+}
+
+function DimensionSvgChart({
+  data,
+  color,
+}: {
+  data: Array<{ session: number; score: number; date: string; scenario: string }>
+  color: string
+}) {
+  const width = 640
+  const height = 220
+  const padX = 34
+  const padY = 18
+  const chartWidth = width - padX * 2
+  const chartHeight = height - padY * 2
+  const xFor = (index: number) => padX + (data.length === 1 ? chartWidth : (index / (data.length - 1)) * chartWidth)
+  const yFor = (score: number) => padY + chartHeight - (Math.max(0, Math.min(5, score)) / 5) * chartHeight
+  const points = data.map((point, index) => `${xFor(index)},${yFor(point.score)}`).join(' ')
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" role="img" aria-label="Dimension score trend line chart">
+      {[0, 1, 2, 3, 4, 5].map(score => (
+        <g key={score}>
+          <line
+            x1={padX}
+            x2={width - padX}
+            y1={yFor(score)}
+            y2={yFor(score)}
+            stroke="#e5e7eb"
+            strokeWidth="1"
+          />
+          <text x="8" y={yFor(score) + 4} className="fill-gray-400 text-[11px]">{score}</text>
+        </g>
+      ))}
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {data.map((point, index) => (
+        <g key={`${point.session}-${point.date}`}>
+          <circle cx={xFor(index)} cy={yFor(point.score)} r="5" fill="#fff" stroke={color} strokeWidth="3">
+            <title>{`Session ${point.session}: ${point.score}/5 - ${point.scenario} - ${point.date}`}</title>
+          </circle>
+          {(index === 0 || index === data.length - 1) && (
+            <text
+              x={xFor(index)}
+              y={height - 4}
+              textAnchor={index === 0 ? 'start' : 'end'}
+              className="fill-gray-400 text-[11px]"
+            >
+              S{point.session}
+            </text>
+          )}
+        </g>
+      ))}
+    </svg>
   )
 }
 

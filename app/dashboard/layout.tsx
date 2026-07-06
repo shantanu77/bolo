@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { getLevelForXp } from '@/lib/levels'
 import dynamic from 'next/dynamic'
+import { useEffect, useState } from 'react'
 
 const CoachChat = dynamic(() => import('@/components/CoachChat'), { ssr: false })
 
@@ -18,13 +19,42 @@ const NAV = [
 ]
 const ADMIN_NAV = { href: '/superadmin', label: 'Admin', icon: '🛠️' }
 
+interface LearningGuideNavItem {
+  id: string
+  title: string
+  topic: string | null
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname()
   const { data: session } = useSession()
+  const [learningGuides, setLearningGuides] = useState<LearningGuideNavItem[]>([])
   const xp   = session?.user?.xp ?? 0
   const { current, next } = getLevelForXp(xp)
   const pct  = next ? Math.round(((xp - current.xpRequired) / (next.xpRequired - current.xpRequired)) * 100) : 100
   const navItems = session?.user?.user_role === 'superadmin' ? [...NAV, ADMIN_NAV] : NAV
+  const showLearningGuides = path.startsWith('/learning-guides')
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+
+    let mounted = true
+    fetch('/api/learning-guides')
+      .then(res => res.ok ? res.json() : { guides: [] })
+      .then(data => {
+        if (!mounted) return
+        setLearningGuides((data.guides ?? []).map((guide: LearningGuideNavItem) => ({
+          id: guide.id,
+          title: guide.title,
+          topic: guide.topic,
+        })))
+      })
+      .catch(() => {
+        if (mounted) setLearningGuides([])
+      })
+
+    return () => { mounted = false }
+  }, [session?.user?.id])
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
@@ -47,17 +77,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="px-2 pb-2 flex gap-1 overflow-x-auto">
           {navItems.map(n => (
-            <Link key={n.href} href={n.href}
-              className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                path === n.href || (n.href !== '/dashboard' && path.startsWith(n.href))
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <span>{n.icon}</span>{n.label}
-            </Link>
+            <div key={n.href} className="shrink-0">
+              <Link href={n.href}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition ${
+                  path === n.href || (n.href !== '/dashboard' && path.startsWith(n.href))
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span>{n.icon}</span>{n.label}
+              </Link>
+            </div>
           ))}
         </nav>
+        {showLearningGuides && learningGuides.length > 0 && (
+          <nav className="px-2 pb-2 flex gap-1 overflow-x-auto">
+            {learningGuides.map(guide => (
+              <Link
+                key={guide.id}
+                href={`/learning-guides?guide=${guide.id}`}
+                className="shrink-0 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-indigo-50 hover:text-indigo-700"
+              >
+                {guide.title}
+              </Link>
+            ))}
+          </nav>
+        )}
       </header>
 
       <aside className="hidden lg:flex w-56 shrink-0 bg-white border-r border-gray-100 flex-col h-screen sticky top-0">
@@ -71,15 +116,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
           {navItems.map(n => (
-            <Link key={n.href} href={n.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
-                path === n.href || (n.href !== '/dashboard' && path.startsWith(n.href))
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <span>{n.icon}</span>{n.label}
-            </Link>
+            <div key={n.href}>
+              <Link href={n.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                  path === n.href || (n.href !== '/dashboard' && path.startsWith(n.href))
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span>{n.icon}</span>{n.label}
+              </Link>
+              {n.href === '/learning-guides' && learningGuides.length > 0 && (
+                <div className="mt-1 ml-8 space-y-0.5 border-l border-gray-100 pl-2">
+                  {learningGuides.map(guide => (
+                    <Link
+                      key={guide.id}
+                      href={`/learning-guides?guide=${guide.id}`}
+                      className={`block rounded-md px-2 py-1.5 text-xs transition ${
+                        path.startsWith('/learning-guides')
+                          ? 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700'
+                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                      }`}
+                      title={guide.topic || guide.title}
+                    >
+                      <span className="block truncate">{guide.title}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
 

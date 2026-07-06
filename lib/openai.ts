@@ -20,6 +20,8 @@ export interface EvaluationResult {
     evidence: string[]
     impact: string
     fix: string
+    rewritten_sentence?: string
+    study_topic?: string
   }>
   overall:           number
   what_worked:       string
@@ -122,6 +124,9 @@ EVALUATION INSTRUCTIONS:
 - Be encouraging and specific. Reference exact phrases from their response.
 - Support every dimension score with evidence from the user's transcript. Quote exact short phrases where possible.
 - Make the evidence practical: what happened, why it affected the score, and what to do instead.
+- For each dimension, include a rewritten_sentence whenever a better wording would help the user understand how they should have spoken.
+- For vocabulary, do not only say "basic but adequate"; show a more natural rewritten sentence using stronger synonyms where appropriate, without making it sound artificial.
+- For each dimension, include a study_topic that can become a short learning guide. Example: vocabulary issue around "good job" -> "Using specific adjectives when appreciating people".
 - Surface one priority improvement area, but still explain each score.
 - The model_response must sound like a confident Indian professional at THEIR level — not a generic Western speaker.
 
@@ -141,13 +146,15 @@ Return ONLY a JSON object:
       "verdict": "<short label such as 'Acceptable but needs sharper wording'>",
       "evidence": ["<exact phrase or short excerpt from the response>", "..."],
       "impact": "<what this did to clarity>",
-      "fix": "<specific correction or technique>"
+      "fix": "<specific correction or technique>",
+      "rewritten_sentence": "<one improved sentence showing exactly how they could say this, or empty string if not useful>",
+      "study_topic": "<short teachable topic for this issue>"
     },
-    "fluency": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "..." },
-    "vocabulary": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "..." },
-    "structure": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "..." },
-    "confidence": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "..." },
-    "tone_match": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "..." }
+    "fluency": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "...", "rewritten_sentence": "...", "study_topic": "..." },
+    "vocabulary": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "...", "rewritten_sentence": "...", "study_topic": "..." },
+    "structure": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "...", "rewritten_sentence": "...", "study_topic": "..." },
+    "confidence": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "...", "rewritten_sentence": "...", "study_topic": "..." },
+    "tone_match": { "score": <same>, "verdict": "...", "evidence": ["..."], "impact": "...", "fix": "...", "rewritten_sentence": "...", "study_topic": "..." }
   },
   "what_worked": "<one specific positive observation referencing what they said>",
   "improvement_focus": "<the single most impactful thing to improve, quoting a specific phrase they used>",
@@ -206,6 +213,8 @@ function normalizeEvidence(
       evidence: Array.isArray(item?.evidence) ? item.evidence.slice(0, 3).map(String).filter(Boolean) : [],
       impact: item?.impact || fallback,
       fix: item?.fix || 'Use shorter, more direct sentences and connect your points clearly.',
+      rewritten_sentence: item?.rewritten_sentence || '',
+      study_topic: item?.study_topic || `Improving ${String(key).replace('_', ' ')}`,
     }]
   }))
 }

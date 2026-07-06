@@ -32,6 +32,8 @@ interface DimensionEvidence {
   evidence: string[]
   impact: string
   fix: string
+  rewritten_sentence?: string
+  study_topic?: string
 }
 interface AttemptResult {
   evaluation: EvalResult
@@ -39,6 +41,17 @@ interface AttemptResult {
   xp: { xpEarned: number; bonuses: string[]; newBadges: string[] }
   isPersonalBest: boolean
   mastery_stars: number
+}
+interface StudyGuide {
+  title: string
+  objective: string
+  lesson: Array<{ heading: string; body: string }>
+  examples: Array<{ weak: string; better: string; why: string }>
+  quick_rule: string
+  review_question: {
+    prompt: string
+    expected_points: string[]
+  }
 }
 
 const DIM_LABELS: Record<string, string> = {
@@ -90,6 +103,11 @@ function PracticeSessionContent() {
   const [recordingSec, setRecordingSec] = useState(0)
   const [processingStep, setProcessingStep] = useState<ProcessingStep>('transcribing')
   const [errorMsg, setErrorMsg] = useState('')
+  const [studyGuide, setStudyGuide] = useState<StudyGuide | null>(null)
+  const [studyGuideTopic, setStudyGuideTopic] = useState('')
+  const [studyGuideLoading, setStudyGuideLoading] = useState('')
+  const [studyGuideError, setStudyGuideError] = useState('')
+  const [showReviewQuestion, setShowReviewQuestion] = useState(false)
 
   const mediaRef    = useRef<MediaRecorder | null>(null)
   const chunksRef   = useRef<Blob[]>([])
@@ -243,6 +261,40 @@ function PracticeSessionContent() {
     setRecordingSec(0)
     setRecordingCurrent(0)
     setIsPlayingRecording(false)
+    setStudyGuide(null)
+    setStudyGuideTopic('')
+    setStudyGuideError('')
+    setShowReviewQuestion(false)
+  }
+
+  async function createStudyGuide(label: string, item: DimensionEvidence) {
+    if (!scenario) return
+    setStudyGuide(null)
+    setStudyGuideError('')
+    setShowReviewQuestion(false)
+    setStudyGuideTopic(item.study_topic || label)
+    setStudyGuideLoading(label)
+    try {
+      const data = await fetchJson('/api/study-guide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dimension: label,
+          topic: item.study_topic,
+          verdict: item.verdict,
+          impact: item.impact,
+          fix: item.fix,
+          rewritten_sentence: item.rewritten_sentence,
+          evidence: item.evidence,
+          scenario_question: scenario.question,
+        }),
+      })
+      setStudyGuide(data.guide)
+    } catch (err) {
+      setStudyGuideError(err instanceof Error ? err.message : 'Could not create study guide.')
+    } finally {
+      setStudyGuideLoading('')
+    }
   }
 
   if (phase === 'loading') {
@@ -382,10 +434,27 @@ function PracticeSessionContent() {
               <p className="text-xs text-gray-400 mb-4">Each score is tied to what you actually said and how it affected the result.</p>
               <div className="space-y-3">
                 {Object.entries(result.evaluation.dimension_evidence).map(([key, item]) => (
-                  <EvidenceCard key={key} label={DIM_LABELS[key]} item={item} />
+                  <EvidenceCard
+                    key={key}
+                    label={DIM_LABELS[key]}
+                    item={item}
+                    loading={studyGuideLoading === DIM_LABELS[key]}
+                    onCreateGuide={() => createStudyGuide(DIM_LABELS[key], item)}
+                  />
                 ))}
               </div>
             </div>
+          )}
+
+          {(studyGuide || studyGuideLoading || studyGuideError) && (
+            <StudyGuidePanel
+              guide={studyGuide}
+              topic={studyGuideTopic}
+              loading={Boolean(studyGuideLoading)}
+              error={studyGuideError}
+              showReviewQuestion={showReviewQuestion}
+              onReview={() => setShowReviewQuestion(true)}
+            />
           )}
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
@@ -544,7 +613,14 @@ function ProcessingRow({ active, done, label }: { active: boolean; done: boolean
   )
 }
 
-function EvidenceCard({ label, item }: { label: string; item: DimensionEvidence }) {
+function EvidenceCard({
+  label, item, loading, onCreateGuide,
+}: {
+  label: string
+  item: DimensionEvidence
+  loading: boolean
+  onCreateGuide: () => void
+}) {
   return (
     <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
       <div className="flex items-start justify-between gap-3 mb-2">
@@ -573,6 +649,126 @@ function EvidenceCard({ label, item }: { label: string; item: DimensionEvidence 
           <p className="text-xs text-gray-700 leading-relaxed">{item.fix}</p>
         </div>
       </div>
+      {item.rewritten_sentence && (
+        <div className="mt-3 rounded-lg border border-green-100 bg-green-50 p-3">
+          <div className="text-xs font-semibold text-green-700 mb-1">Try saying it like this</div>
+          <p className="text-sm text-gray-800 leading-relaxed">&quot;{item.rewritten_sentence}&quot;</p>
+        </div>
+      )}
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-xs text-gray-400">
+          {item.study_topic ? `Guide topic: ${item.study_topic}` : 'Create a focused guide for this issue'}
+        </div>
+        <button
+          type="button"
+          onClick={onCreateGuide}
+          disabled={loading}
+          className="shrink-0 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 disabled:opacity-60"
+        >
+          {loading ? 'Creating guide...' : 'Create AI study guide'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function StudyGuidePanel({
+  guide, topic, loading, error, showReviewQuestion, onReview,
+}: {
+  guide: StudyGuide | null
+  topic: string
+  loading: boolean
+  error: string
+  showReviewQuestion: boolean
+  onReview: () => void
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-4 sm:p-6">
+      <div className="mb-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-indigo-500">AI Study Guide</div>
+        <h3 className="mt-1 text-lg font-bold text-gray-800">{guide?.title ?? topic}</h3>
+      </div>
+
+      {loading && (
+        <div className="rounded-xl bg-indigo-50 p-4 text-sm text-indigo-700">
+          Creating a focused guide for this issue...
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">{error}</div>
+      )}
+
+      {guide && (
+        <div className="space-y-5">
+          <p className="text-sm text-gray-600 leading-relaxed">{guide.objective}</p>
+
+          <div className="grid gap-3">
+            {guide.lesson?.map(section => (
+              <div key={section.heading} className="rounded-xl bg-gray-50 p-4">
+                <div className="text-sm font-semibold text-gray-800">{section.heading}</div>
+                <p className="mt-1 text-sm text-gray-600 leading-relaxed">{section.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {guide.examples?.length > 0 && (
+            <div>
+              <div className="mb-2 text-sm font-semibold text-gray-800">Examples</div>
+              <div className="grid gap-3">
+                {guide.examples.map((example, idx) => (
+                  <div key={`${example.weak}-${idx}`} className="rounded-xl border border-gray-100 p-4">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div>
+                        <div className="text-xs font-semibold text-gray-400 mb-1">Weak</div>
+                        <p className="text-sm text-gray-600">&quot;{example.weak}&quot;</p>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-green-600 mb-1">Better</div>
+                        <p className="text-sm font-medium text-gray-800">&quot;{example.better}&quot;</p>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">{example.why}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {guide.quick_rule && (
+            <div className="rounded-xl bg-indigo-50 p-4 text-sm font-medium text-indigo-800">
+              {guide.quick_rule}
+            </div>
+          )}
+
+          <div className="border-t border-gray-100 pt-4">
+            {!showReviewQuestion ? (
+              <button
+                type="button"
+                onClick={onReview}
+                className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
+              >
+                Review my learning
+              </button>
+            ) : (
+              <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">Practice question</div>
+                <p className="text-sm font-semibold text-gray-800">{guide.review_question?.prompt}</p>
+                {guide.review_question?.expected_points?.length > 0 && (
+                  <div className="mt-3">
+                    <div className="text-xs font-semibold text-gray-500 mb-1">Your answer should include</div>
+                    <ul className="space-y-1 text-sm text-gray-600">
+                      {guide.review_question.expected_points.map(point => (
+                        <li key={point}>- {point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

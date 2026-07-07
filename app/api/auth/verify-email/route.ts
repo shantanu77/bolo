@@ -3,7 +3,7 @@ import { verifyEmailToken } from '@/lib/email-verification'
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token') ?? ''
-  const baseUrl = req.nextUrl.origin
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || req.nextUrl.origin
 
   if (!token) {
     return NextResponse.redirect(`${baseUrl}/login?verified=missing`)

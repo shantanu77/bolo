@@ -1,9 +1,14 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { pageOpenGraph } from '@/lib/seo'
+
+const PAGE_DESCRIPTION = 'Why we built AuraXpress, our mission to close India\'s professional English confidence gap, and the team behind it.'
 
 export const metadata: Metadata = {
-  title: 'About — AuraXpress',
-  description: 'Why we built AuraXpress, and who we built it for.',
+  title: 'About',
+  description: PAGE_DESCRIPTION,
+  alternates: { canonical: '/about' },
+  openGraph: pageOpenGraph({ url: '/about', title: 'About — AuraXpress', description: PAGE_DESCRIPTION }),
 }
 
 const VALUES = [
@@ -41,8 +46,8 @@ const TEAM = [
 
 const TIMELINE = [
   { year: '2024 Q3', event: 'Problem identified — too many great engineers and managers held back by communication confidence, not skill.' },
-  { year: '2024 Q4', event: 'First prototype: voice input → GPT evaluation → feedback. Tested with 50 users in Bangalore.' },
-  { year: '2025 Q1', event: 'Built the persona system and personalised scenario generation. Deepgram en-IN integration.' },
+  { year: '2024 Q4', event: 'First prototype: voice input → AI evaluation → spoken feedback. Tested with 50 users in Bangalore.' },
+  { year: '2025 Q1', event: 'Built the persona system, personalised scenario generation, and Indian English speech recognition.' },
   { year: '2025 Q2', event: 'Added gamification (XP, streaks, leaderboard) and the daily challenge. 500 beta users.' },
   { year: '2025 Q3', event: 'Voice bio — users can speak their professional profile instead of filling a form. 2,000+ users.' },
   { year: 'Now',     event: 'Growing the scenario library, refining feedback quality, expanding to Team plans.' },

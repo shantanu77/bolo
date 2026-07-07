@@ -1,9 +1,14 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { faqJsonLd, pageOpenGraph } from '@/lib/seo'
+
+const PAGE_DESCRIPTION = 'Simple, affordable AI communication coaching pricing for individual professionals and teams. Free forever plan, Pro at ₹499/month, and Teams plans available.'
 
 export const metadata: Metadata = {
-  title: 'Pricing — AuraXpress',
-  description: 'Simple, affordable pricing for individual professionals and teams.',
+  title: 'Pricing',
+  description: PAGE_DESCRIPTION,
+  alternates: { canonical: '/pricing' },
+  openGraph: pageOpenGraph({ url: '/pricing', title: 'Pricing — AuraXpress', description: PAGE_DESCRIPTION }),
 }
 
 const PLANS = [
@@ -111,6 +116,11 @@ const FAQ = [
 export default function PricingPage() {
   return (
     <div className="bg-white text-gray-900">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(FAQ.map(f => ({ q: f.q, a: f.a })))) }}
+      />
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-indigo-950 to-indigo-800 text-white py-20 px-6 text-center">
@@ -224,7 +234,7 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 px-6">
+      <section id="faq" className="py-20 px-6">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Frequently asked questions</h2>
           <div className="space-y-6">

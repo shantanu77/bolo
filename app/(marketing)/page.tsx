@@ -1,4 +1,12 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
+import { SITE_TITLE, SITE_DESCRIPTION, softwareApplicationJsonLd, pageOpenGraph } from '@/lib/seo'
+
+export const metadata: Metadata = {
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: '/' },
+  openGraph: pageOpenGraph({ url: '/', title: SITE_TITLE, description: SITE_DESCRIPTION }),
+}
 
 const STATS = [
   { value: '10,000+', label: 'Practice sessions' },
@@ -94,6 +102,11 @@ const WHO_FOR = [
 export default function HomePage() {
   return (
     <div className="bg-white text-gray-900">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }}
+      />
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-900 text-white min-h-[88vh] flex flex-col justify-center px-6 py-24">

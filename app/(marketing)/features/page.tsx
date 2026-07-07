@@ -1,9 +1,15 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { pageOpenGraph } from '@/lib/seo'
+
+const PAGE_DESCRIPTION =
+  'Voice-first onboarding, role-aware AI scenarios, 6-dimension evaluation, progress tracking, and gamification — everything AuraXpress does to help professionals communicate with clarity and confidence at work.'
 
 export const metadata: Metadata = {
-  title: 'Features — AuraXpress',
-  description: 'Everything AuraXpress does to help Indian professionals speak better English at work.',
+  title: 'Features',
+  description: PAGE_DESCRIPTION,
+  alternates: { canonical: '/features' },
+  openGraph: pageOpenGraph({ url: '/features', title: 'Features — AuraXpress', description: PAGE_DESCRIPTION }),
 }
 
 const CORE_FEATURES = [
@@ -12,7 +18,7 @@ const CORE_FEATURES = [
     icon: '🎙️',
     badge: 'Smart Onboarding',
     title: 'Speak about yourself. AuraXpress does the rest.',
-    desc: `Most apps ask you to fill a form. AuraXpress asks you to speak for 60 seconds. Tell it your job, your responsibilities, who you interact with, and what challenges you face. GPT-4o structures everything automatically into a rich professional profile that shapes every scenario and evaluation you will ever receive.`,
+    desc: `Most apps ask you to fill a form. AuraXpress asks you to speak for 60 seconds. Tell it your job, your responsibilities, who you interact with, and what challenges you face. Our AI structures everything automatically into a rich professional profile that shapes every scenario and evaluation you will ever receive.`,
     points: [
       'Record a 60-second voice introduction',
       'AI extracts role, seniority, industry, team context, communication challenges',
@@ -26,7 +32,7 @@ const CORE_FEATURES = [
     icon: '📋',
     badge: 'Personalised Content',
     title: 'Scenarios built for your exact job, not a generic professional.',
-    desc: `AuraXpress does not give every user the same 10 exercises. After you set up your profile, GPT-4o generates 5–6 practice categories and 15+ scenarios that are specific to your role, industry, seniority, and who you speak with. A startup founder gets investor pitches and customer sales conversations. A BPO agent gets empathy-building and call resolution scenarios.`,
+    desc: `AuraXpress does not give every user the same 10 exercises. After you set up your profile, our AI generates 5–6 practice categories and 15+ scenarios that are specific to your role, industry, seniority, and who you speak with. A startup founder gets investor pitches and customer sales conversations. A BPO agent gets empathy-building and call resolution scenarios.`,
     points: [
       'AI-generated categories tailored to your profession',
       'Scenarios cover your actual communication contexts',
@@ -168,19 +174,19 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      {/* Deepgram + OpenAI section */}
+      {/* Technology */}
       <section className="py-20 px-6 bg-gray-50">
         <div className="max-w-4xl mx-auto text-center">
           <div className="text-xs font-semibold uppercase tracking-widest text-indigo-500 mb-4">Technology</div>
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Built on best-in-class AI</h2>
           <p className="text-gray-500 mb-12 max-w-2xl mx-auto">
-            AuraXpress uses Deepgram for real-time speech recognition with Indian English optimisation, and GPT-4o for evaluation, scenario generation, and model response creation.
+            AuraXpress combines real-time speech recognition tuned for Indian English with a large language model that understands professional context — so every session is transcribed accurately, evaluated intelligently, and answered back in a natural voice.
           </p>
           <div className="grid sm:grid-cols-3 gap-6 text-left">
             {[
-              { icon: '🎙️', title: 'Deepgram nova-2 en-IN', desc: 'Best-in-class speech recognition tuned for Indian English. Detects filler words, measures speaking pace.' },
-              { icon: '🧠', title: 'GPT-4o Evaluation', desc: 'Understands your professional context, your seniority, and your specific scenario to give nuanced, role-aware feedback.' },
-              { icon: '🔊', title: 'OpenAI TTS', desc: 'All feedback and model responses are spoken back to you — so you hear what good sounds like, not just read it.' },
+              { icon: '🎙️', title: 'Indian English speech recognition', desc: 'Best-in-class speech-to-text tuned for Indian English. Detects filler words, measures speaking pace.' },
+              { icon: '🧠', title: 'Context-aware AI evaluation', desc: 'Understands your professional context, your seniority, and your specific scenario to give nuanced, role-aware feedback.' },
+              { icon: '🔊', title: 'Natural voice responses', desc: 'All feedback and model responses are spoken back to you — so you hear what good sounds like, not just read it.' },
             ].map(t => (
               <div key={t.title} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                 <div className="text-3xl mb-3">{t.icon}</div>

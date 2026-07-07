@@ -560,26 +560,26 @@ function PracticeSessionContent() {
               <div className="flex items-center gap-2 mb-3">
                 <button
                   onClick={() => seekRecording(recordingCurrent - 5)}
-                  className="px-3 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm hover:border-indigo-200 hover:text-indigo-700 transition"
+                  className="min-h-[44px] px-3.5 rounded-lg border border-gray-200 text-gray-600 text-sm hover:border-indigo-200 hover:text-indigo-700 transition flex items-center justify-center"
                 >
                   -5s
                 </button>
                 <button
                   onClick={toggleRecordingPlayback}
-                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition"
+                  className="min-h-[44px] px-4 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition flex items-center justify-center"
                 >
                   {isPlayingRecording ? 'Pause' : 'Play'}
                 </button>
                 <button
                   onClick={() => seekRecording(recordingCurrent + 5)}
-                  className="px-3 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm hover:border-indigo-200 hover:text-indigo-700 transition"
+                  className="min-h-[44px] px-3.5 rounded-lg border border-gray-200 text-gray-600 text-sm hover:border-indigo-200 hover:text-indigo-700 transition flex items-center justify-center"
                 >
                   +5s
                 </button>
                 <select
                   value={recordingSpeed}
                   onChange={e => changeRecordingSpeed(Number(e.target.value))}
-                  className="ml-auto rounded-lg border border-gray-200 px-2 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  className="ml-auto min-h-[44px] rounded-lg border border-gray-200 px-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   aria-label="Playback speed"
                 >
                   {[0.75, 1, 1.25, 1.5].map(speed => (

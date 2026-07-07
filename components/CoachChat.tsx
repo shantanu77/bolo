@@ -99,7 +99,7 @@ export default function CoachChat() {
                 <button
                   onClick={clearChat}
                   title="New conversation"
-                  className="w-8 h-8 rounded-lg text-indigo-200 hover:text-white hover:bg-indigo-500 flex items-center justify-center transition text-base"
+                  className="w-10 h-10 rounded-lg text-indigo-200 hover:text-white hover:bg-indigo-500 flex items-center justify-center transition text-base"
                 >
                   ✏️
                 </button>
@@ -108,7 +108,7 @@ export default function CoachChat() {
               <button
                 onClick={() => setExpanded(e => !e)}
                 title={expanded ? 'Collapse' : 'Expand'}
-                className="w-8 h-8 rounded-lg text-indigo-200 hover:text-white hover:bg-indigo-500 flex items-center justify-center transition text-sm"
+                className="hidden sm:flex w-10 h-10 rounded-lg text-indigo-200 hover:text-white hover:bg-indigo-500 items-center justify-center transition text-sm"
               >
                 {expanded ? '⊡' : '⊞'}
               </button>
@@ -116,7 +116,7 @@ export default function CoachChat() {
               <button
                 onClick={() => setOpen(false)}
                 title="Close"
-                className="w-8 h-8 rounded-lg text-indigo-200 hover:text-white hover:bg-indigo-500 flex items-center justify-center transition"
+                className="w-10 h-10 rounded-lg text-indigo-200 hover:text-white hover:bg-indigo-500 flex items-center justify-center transition"
               >
                 ✕
               </button>

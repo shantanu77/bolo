@@ -135,8 +135,8 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
           <div>
             <h2 className="text-lg font-bold text-gray-800">Tell AuraXpress about yourself</h2>
             <p className="text-xs text-gray-400 mt-0.5">Your profile shapes every scenario and evaluation</p>
@@ -144,7 +144,7 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto">
           {/* Prompt card */}
           <div className="bg-indigo-50 rounded-xl p-4 mb-6 border border-indigo-100">
             <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-2">Speak about this</p>

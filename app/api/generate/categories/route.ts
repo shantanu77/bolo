@@ -246,6 +246,16 @@ function buildPersonaContext(persona: Record<string, unknown> | null, bio: Recor
   const contexts = bio?.communication_contexts
   if (Array.isArray(contexts) && contexts.length)
     lines.push(`Communication contexts: ${contexts.join(', ')}`)
+  const bioChallenges = bio?.self_mentioned_challenges
+  if (Array.isArray(bioChallenges) && bioChallenges.length)
+    lines.push(`Challenges from voice introduction: ${bioChallenges.join(', ')}`)
+  const aspirations = bio?.aspirations
+  if (Array.isArray(aspirations) && aspirations.length)
+    lines.push(`Aspirations from voice introduction: ${aspirations.join(', ')}`)
+  const scenarioPriorities = bio?.inferred_scenario_priorities
+  if (Array.isArray(scenarioPriorities) && scenarioPriorities.length)
+    lines.push(`Scenario priorities inferred from introduction: ${scenarioPriorities.join(', ')}`)
+  if (bio?.personal_style)         lines.push(`Personal communication style: ${bio.personal_style}`)
   if (bio?.evaluation_lens)         lines.push(`Evaluation note: ${bio.evaluation_lens}`)
   const challenges = parseJsonArray(persona?.challenges)
   if (challenges.length) lines.push(`Self-reported challenges: ${challenges.join(', ')}`)

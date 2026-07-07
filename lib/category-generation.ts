@@ -218,6 +218,14 @@ async function generateFromRequest(
     (bio?.current_role || persona?.job_role) && `Role: ${bio?.current_role ?? persona?.job_role}`,
     (bio?.seniority || persona?.seniority)   && `Seniority: ${bio?.seniority ?? persona?.seniority}`,
     bio?.industry             && `Industry: ${bio.industry}`,
+    arrayLine('Key responsibilities', bio?.key_responsibilities),
+    arrayLine('Speaks with', bio?.who_they_speak_with),
+    arrayLine('Communication contexts', bio?.communication_contexts),
+    arrayLine('Challenges from voice introduction', bio?.self_mentioned_challenges),
+    arrayLine('Aspirations from voice introduction', bio?.aspirations),
+    arrayLine('Scenario priorities inferred from introduction', bio?.inferred_scenario_priorities),
+    bio?.personal_style       && `Personal communication style: ${bio.personal_style}`,
+    bio?.evaluation_lens      && `Evaluation note: ${bio.evaluation_lens}`,
   ].filter(Boolean).join('\n')
 
   const completion = await openai.chat.completions.create({
@@ -280,4 +288,8 @@ Make scenarios progressively challenging. Tailor to the user's seniority and ind
       ideal_wpm_min: number; ideal_wpm_max: number
     }>
   }
+}
+
+function arrayLine(label: string, value: unknown) {
+  return Array.isArray(value) && value.length ? `${label}: ${value.join(', ')}` : ''
 }

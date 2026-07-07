@@ -133,6 +133,15 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
     return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`
   }
 
+  function saveProfile() {
+    fetch('/api/generate/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ force: true }),
+    }).catch(() => null)
+    onDone({ transcript, structured: structured! })
+  }
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
@@ -258,7 +267,7 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
                   className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-lg hover:border-indigo-300 transition">
                   Record again
                 </button>
-                <button onClick={() => onDone({ transcript, structured })}
+                <button onClick={saveProfile}
                   className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition">
                   Save profile
                 </button>

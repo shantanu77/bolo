@@ -1,15 +1,25 @@
 'use client'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const verified = searchParams.get('verified')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -19,7 +29,7 @@ export default function LoginPage() {
     const res = await signIn('credentials', { email, password, redirect: false })
 
     if (res?.error) {
-      setError('Invalid email or password')
+      setError('Invalid email or password, or your email is not verified yet.')
       setLoading(false)
     } else {
       router.push('/dashboard')
@@ -47,6 +57,16 @@ export default function LoginPage() {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 rounded-lg px-4 py-3 mb-4 text-sm">
               {error}
+            </div>
+          )}
+          {verified === '1' && (
+            <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm">
+              Email verified. You can sign in now.
+            </div>
+          )}
+          {(verified === 'invalid' || verified === 'missing') && (
+            <div className="bg-red-50 border border-red-200 text-red-600 rounded-lg px-4 py-3 mb-4 text-sm">
+              Verification link is invalid or expired.
             </div>
           )}
 

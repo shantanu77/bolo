@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { queryOne } from './db'
 import { ensureUserAdminColumns, getSuperadminEmails } from './admin'
+import { ensureEmailVerificationColumns } from './email-verification'
 
 export interface DbUser {
   id: string
@@ -13,6 +14,7 @@ export interface DbUser {
   subscription_ends: string | null
   user_role: string
   account_status: string
+  email_verified_at: string | null
   xp: number
   level: number
   streak_days: number
@@ -30,6 +32,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null
 
         await ensureUserAdminColumns()
+        await ensureEmailVerificationColumns()
 
         const user = await queryOne<DbUser>(
           'SELECT * FROM users WHERE email = ?',
@@ -40,6 +43,7 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.password_hash)
         if (!valid) return null
         if (user.account_status === 'suspended') return null
+        if (!user.email_verified_at) return null
 
         const userRole = getSuperadminEmails().includes(user.email.toLowerCase())
           ? 'superadmin'

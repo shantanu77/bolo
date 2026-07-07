@@ -113,7 +113,7 @@ export default function PrivacyPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Grievance officer and contact</h2>
             <p>
               For privacy questions, data requests, or grievances relating to this policy, contact us at{' '}
-              <a href="mailto:hello@auraxpress.com" className="text-indigo-600 hover:underline">hello@auraxpress.com</a>.
+              <a href="mailto:helloaura@auraxpress.com" className="text-indigo-600 hover:underline">helloaura@auraxpress.com</a>.
               We aim to acknowledge requests within 7 business days.
             </p>
           </div>

@@ -190,7 +190,7 @@ export default function AboutPage() {
           <div className="text-center mt-12 text-gray-400 text-sm">
             We are a small, focused team building AuraXpress in India, for India. <br />
             If you want to work with us, write to{' '}
-            <a href="mailto:hello@auraxpress.com" className="text-indigo-500 hover:underline">hello@auraxpress.com</a>.
+            <a href="mailto:helloaura@auraxpress.com" className="text-indigo-500 hover:underline">helloaura@auraxpress.com</a>.
           </div>
         </div>
       </section>

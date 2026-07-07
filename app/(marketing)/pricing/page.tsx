@@ -67,7 +67,7 @@ const PLANS = [
     period: 'per seat / month (min 5)',
     desc: 'For companies investing in their team\'s communication.',
     cta: 'Contact us',
-    ctaHref: 'mailto:hello@auraxpress.com',
+    ctaHref: 'mailto:helloaura@auraxpress.com',
     highlight: false,
     features: [
       'Everything in Pro',
@@ -109,7 +109,7 @@ const FAQ = [
   },
   {
     q: 'Is there a student discount?',
-    a: 'Yes — students with a valid college email get 50% off Pro. Email us at hello@auraxpress.com with your college ID.',
+    a: 'Yes — students with a valid college email get 50% off Pro. Email us at helloaura@auraxpress.com with your college ID.',
   },
 ]
 
@@ -205,7 +205,7 @@ export default function PricingPage() {
 
           <p className="text-center text-sm text-gray-400 mt-10">
             All prices in INR. GST applicable. Student discount available —{' '}
-            <a href="mailto:hello@auraxpress.com" className="text-indigo-500 hover:underline">email us</a>.
+            <a href="mailto:helloaura@auraxpress.com" className="text-indigo-500 hover:underline">email us</a>.
           </p>
         </div>
       </section>

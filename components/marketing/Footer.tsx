@@ -36,7 +36,7 @@ export default function Footer() {
             <li><Link href="/login" className="hover:text-white transition">Login</Link></li>
             <li><Link href="/contact" className="hover:text-white transition">Contact Us</Link></li>
             <li>
-              <a href="mailto:hello@auraxpress.com" className="hover:text-white transition">hello@auraxpress.com</a>
+              <a href="mailto:helloaura@auraxpress.com" className="hover:text-white transition">helloaura@auraxpress.com</a>
             </li>
           </ul>
         </div>

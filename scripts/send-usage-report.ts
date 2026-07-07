@@ -20,7 +20,7 @@ dotenvConfig({ path: path.join(PROJECT_ROOT, '.env') })
 import mysql from 'mysql2/promise'
 import nodemailer from 'nodemailer'
 
-const RECIPIENT = process.env.REPORT_EMAIL ?? 'shantanu@mobileyug.com'
+const RECIPIENT = process.env.REPORT_EMAIL ?? 'helloaura@auraxpress.com'
 const INR_RATE  = 83.5   // USD → INR (update periodically)
 
 async function run() {
@@ -147,7 +147,7 @@ PRICING REFERENCE
     port:   Number(process.env.EMAIL_PORT) || 587,
     secure: false,
     auth: {
-      user: process.env.EMAIL_FROM,
+      user: process.env.EMAIL_USER || process.env.EMAIL_FROM,
       pass: process.env.EMAIL_PASSWORD,
     },
   })

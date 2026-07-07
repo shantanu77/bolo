@@ -148,7 +148,7 @@ export default function TermsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">12. Contact</h2>
             <p>
               Questions about these Terms can be sent to{' '}
-              <a href="mailto:hello@auraxpress.com" className="text-indigo-600 hover:underline">hello@auraxpress.com</a>.
+              <a href="mailto:helloaura@auraxpress.com" className="text-indigo-600 hover:underline">helloaura@auraxpress.com</a>.
             </p>
           </div>
 

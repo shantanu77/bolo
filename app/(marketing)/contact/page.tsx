@@ -15,19 +15,19 @@ const CHANNELS = [
     icon: '💬',
     title: 'General support',
     desc: 'Questions about your account, a practice session, or a billing issue.',
-    email: 'hello@auraxpress.com',
+    email: 'helloaura@auraxpress.com',
   },
   {
     icon: '🏢',
     title: 'Teams & enterprise',
     desc: 'Rolling out AuraXpress to your team or organisation — seats, admin dashboard, custom scenarios.',
-    email: 'hello@auraxpress.com',
+    email: 'helloaura@auraxpress.com',
   },
   {
     icon: '📰',
     title: 'Press & partnerships',
     desc: 'Media enquiries, collaborations, or integration partnerships.',
-    email: 'hello@auraxpress.com',
+    email: 'helloaura@auraxpress.com',
   },
 ]
 

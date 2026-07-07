@@ -29,7 +29,7 @@ export const organizationJsonLd = {
   url: SITE_URL,
   logo: absoluteUrl('/icon.png'),
   description: SITE_DESCRIPTION,
-  email: 'hello@auraxpress.com',
+  email: 'helloaura@auraxpress.com',
   sameAs: [] as string[],
 }
 

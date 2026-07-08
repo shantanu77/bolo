@@ -1,11 +1,7 @@
 import path from 'path'
-import { fileURLToPath } from 'url'
 import { config as dotenvConfig } from 'dotenv'
 import nodemailer from 'nodemailer'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const PROJECT_ROOT = path.resolve(__dirname, '..')
+const PROJECT_ROOT = process.cwd()
 
 dotenvConfig({ path: path.join(PROJECT_ROOT, '.env.local') })
 dotenvConfig({ path: path.join(PROJECT_ROOT, '.env') })

@@ -193,6 +193,7 @@ export async function getAdminSummary(): Promise<AdminSummaryResponse> {
     last30Start,
     last30Start,
     last30Start,
+    last30Start,
   ]) ?? {}
 
   const revenue = await row(`

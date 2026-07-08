@@ -29,6 +29,22 @@ interface AdminUser {
   stt_cost_usd: number | string
 }
 
+interface AdminSummaryResponse {
+  generatedAt: string
+  timezone: string
+  summary: {
+    growth: Record<string, number | string | null>
+    funnel: Record<string, number | string | null>
+    engagement: Record<string, number | string | null>
+    revenue: Record<string, number | string | null>
+    subscriptions: Record<string, number | string | null>
+    content: Record<string, number | string | null>
+    aiUsage: Record<string, number | string | null>
+  }
+  topUsage: Array<Record<string, number | string | null>>
+  topUsers: Array<Record<string, number | string | null>>
+}
+
 const SUBSCRIPTION_TYPES = ['free', 'pro_trial', 'pro']
 const ACCOUNT_STATUSES = ['active', 'suspended']
 const USER_ROLES = ['user', 'superadmin']
@@ -36,8 +52,10 @@ const USER_ROLES = ['user', 'superadmin']
 export default function SuperadminPage() {
   const { data: session } = useSession()
   const [users, setUsers] = useState<AdminUser[]>([])
+  const [summary, setSummary] = useState<AdminSummaryResponse | null>(null)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [summaryLoading, setSummaryLoading] = useState(true)
   const [workingUserId, setWorkingUserId] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -55,6 +73,20 @@ export default function SuperadminPage() {
     receipt: '',
     notes: '',
   })
+
+  const loadSummary = useCallback(async () => {
+    setSummaryLoading(true)
+    try {
+      const res = await fetch('/api/superadmin/summary')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Could not load dashboard summary.')
+      setSummary(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load dashboard summary.')
+    } finally {
+      setSummaryLoading(false)
+    }
+  }, [])
 
   const loadUsers = useCallback(async (nextSearch = '') => {
     setLoading(true)
@@ -76,6 +108,10 @@ export default function SuperadminPage() {
     loadUsers()
   }, [loadUsers])
 
+  useEffect(() => {
+    loadSummary()
+  }, [loadSummary])
+
   async function patchUser(userId: string, payload: Record<string, unknown>, success: string) {
     setWorkingUserId(userId)
     setMessage('')
@@ -89,7 +125,7 @@ export default function SuperadminPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Action failed.')
       setMessage(success)
-      await loadUsers(search)
+      await Promise.all([loadUsers(search), loadSummary()])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Action failed.')
     } finally {
@@ -108,6 +144,19 @@ export default function SuperadminPage() {
       <div className="p-6 text-sm text-red-600">Forbidden</div>
     )
   }
+
+  const growth = summary?.summary.growth
+  const funnel = summary?.summary.funnel
+  const engagement = summary?.summary.engagement
+  const revenue = summary?.summary.revenue
+  const subscriptions = summary?.summary.subscriptions
+  const content = summary?.summary.content
+  const aiUsage = summary?.summary.aiUsage
+
+  const verifiedRate = percent(growth?.verified_users, growth?.total_users)
+  const activationRate = percent(funnel?.session_users, funnel?.total_users)
+  const attemptRate = percent(funnel?.attempt_users, funnel?.total_users)
+  const paidRate = percent(subscriptions?.active_pro, growth?.total_users)
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto lg:mx-0">
@@ -140,6 +189,145 @@ export default function SuperadminPage() {
           {error || message}
         </div>
       )}
+
+      <section className="mb-6 space-y-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            label="Total users"
+            value={summaryLoading ? '...' : formatCount(growth?.total_users)}
+            note={`${formatCount(growth?.new_users_30d)} new in last 30d`}
+          />
+          <StatCard
+            label="DAU / WAU / MAU"
+            value={summaryLoading ? '...' : `${formatCount(engagement?.dau)} / ${formatCount(engagement?.wau)} / ${formatCount(engagement?.mau)}`}
+            note={`${formatCount(engagement?.sessions_30d)} sessions in last 30d`}
+          />
+          <StatCard
+            label="Revenue this month"
+            value={summaryLoading ? '...' : `₹${formatCount(revenue?.revenue_mtd_inr)}`}
+            note={`${formatCount(revenue?.paid_orders_mtd)} paid orders this month`}
+          />
+          <StatCard
+            label="AI cost this month"
+            value={summaryLoading ? '...' : `$${formatMoney(aiUsage?.cost_mtd_usd)}`}
+            note={`${formatCount(aiUsage?.tokens_mtd)} tokens this month`}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.4fr_1fr]">
+          <Panel title="Business Snapshot">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <MetricLine label="New users today" value={formatCount(growth?.new_users_today)} />
+              <MetricLine label="New users this month" value={formatCount(growth?.new_users_mtd)} />
+              <MetricLine label="Verified users" value={`${formatCount(growth?.verified_users)} (${verifiedRate})`} />
+              <MetricLine label="Active Pro users" value={`${formatCount(subscriptions?.active_pro)} (${paidRate})`} />
+              <MetricLine label="Active trials" value={formatCount(subscriptions?.active_trials)} />
+              <MetricLine label="Open unpaid orders" value={formatCount(revenue?.open_orders)} />
+              <MetricLine label="Revenue today" value={`₹${formatCount(revenue?.revenue_today_inr)}`} />
+              <MetricLine label="Revenue last 30 days" value={`₹${formatCount(revenue?.revenue_30d_inr)}`} />
+              <MetricLine label="Expiring in 7 days" value={formatCount(subscriptions?.expiring_7d)} />
+              <MetricLine label="Expired paid/trial access" value={formatCount(subscriptions?.expired_paid_access)} />
+            </div>
+          </Panel>
+
+          <Panel title="Activation Funnel">
+            <div className="space-y-3">
+              <FunnelLine label="Users with persona" count={formatCount(funnel?.persona_users)} rate={percent(funnel?.persona_users, funnel?.total_users)} />
+              <FunnelLine label="Users who started a session" count={formatCount(funnel?.session_users)} rate={activationRate} />
+              <FunnelLine label="Users with at least one attempt" count={formatCount(funnel?.attempt_users)} rate={attemptRate} />
+              <FunnelLine label="Users with learning guides" count={formatCount(funnel?.guide_users)} rate={percent(funnel?.guide_users, funnel?.total_users)} />
+            </div>
+          </Panel>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+          <Panel title="Practice Quality">
+            <div className="space-y-3">
+              <MetricLine label="Sessions today" value={formatCount(engagement?.sessions_today)} />
+              <MetricLine label="Sessions yesterday" value={formatCount(engagement?.sessions_yesterday)} />
+              <MetricLine label="Attempts today" value={formatCount(engagement?.attempts_today)} />
+              <MetricLine label="Attempts last 30 days" value={formatCount(engagement?.attempts_30d)} />
+              <MetricLine label="Average score (30d)" value={`${formatDecimal(engagement?.avg_score_30d)}/100`} />
+              <MetricLine label="Average duration (30d)" value={`${formatDecimal(engagement?.avg_duration_30d)} sec`} />
+              <MetricLine label="Average WPM (30d)" value={formatDecimal(engagement?.avg_wpm_30d)} />
+              <MetricLine label="Average fillers (30d)" value={formatDecimal(engagement?.avg_fillers_30d)} />
+            </div>
+          </Panel>
+
+          <Panel title="Content Usage">
+            <div className="space-y-3">
+              <MetricLine label="Default active scenarios" value={formatCount(content?.active_default_scenarios)} />
+              <MetricLine label="Custom categories total" value={formatCount(content?.custom_categories_total)} />
+              <MetricLine label="Custom categories (30d)" value={formatCount(content?.custom_categories_30d)} />
+              <MetricLine label="Custom scenarios total" value={formatCount(content?.custom_scenarios_total)} />
+              <MetricLine label="Custom scenarios (30d)" value={formatCount(content?.custom_scenarios_30d)} />
+              <MetricLine label="Generation jobs (30d)" value={formatCount(content?.generation_jobs_30d)} />
+              <MetricLine label="Learning guides total" value={formatCount(content?.learning_guides_total)} />
+              <MetricLine label="Learning guides (30d)" value={formatCount(content?.learning_guides_30d)} />
+            </div>
+          </Panel>
+
+          <Panel title="AI Usage">
+            <div className="space-y-3">
+              <MetricLine label="AI calls (30d)" value={formatCount(aiUsage?.calls_30d)} />
+              <MetricLine label="Tokens today" value={formatCount(aiUsage?.tokens_today)} />
+              <MetricLine label="Tokens last 7 days" value={formatCount(aiUsage?.tokens_7d)} />
+              <MetricLine label="Tokens last 30 days" value={formatCount(aiUsage?.tokens_30d)} />
+              <MetricLine label="AI cost today" value={`$${formatMoney(aiUsage?.cost_today_usd)}`} />
+              <MetricLine label="AI cost last 7 days" value={`$${formatMoney(aiUsage?.cost_7d_usd)}`} />
+              <MetricLine label="AI cost last 30 days" value={`$${formatMoney(aiUsage?.cost_30d_usd)}`} />
+              <MetricLine label="AI cost this month" value={`$${formatMoney(aiUsage?.cost_mtd_usd)}`} />
+            </div>
+          </Panel>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <Panel title="Top AI Cost Buckets (30d)">
+            {summaryLoading ? (
+              <div className="text-sm text-gray-400">Loading summary...</div>
+            ) : !summary?.topUsage.length ? (
+              <div className="text-sm text-gray-400">No AI usage data yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {summary.topUsage.map((item, index) => (
+                  <div key={`${item.call_type}-${item.model}-${index}`} className="rounded-lg border border-gray-100 px-3 py-2">
+                    <div className="text-sm font-semibold text-gray-800">{item.call_type} / {item.model}</div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      {formatCount(item.call_count)} calls · {formatCount(item.total_tokens)} tokens · ${formatMoney(item.cost_usd)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          <Panel title="Top Active Users (30d)">
+            {summaryLoading ? (
+              <div className="text-sm text-gray-400">Loading summary...</div>
+            ) : !summary?.topUsers.length ? (
+              <div className="text-sm text-gray-400">No practice activity yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {summary.topUsers.map((user, index) => (
+                  <div key={`${user.email}-${index}`} className="rounded-lg border border-gray-100 px-3 py-2">
+                    <div className="text-sm font-semibold text-gray-800">{user.name}</div>
+                    <div className="text-xs text-gray-400">{user.email}</div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      {formatCount(user.attempts_30d)} attempts · avg {formatDecimal(user.avg_score_30d)}/100 · XP {formatCount(user.xp)} · streak {formatCount(user.streak_days)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+        </div>
+
+        {summary && (
+          <div className="text-xs text-gray-400">
+            Dashboard generated {formatDate(summary.generatedAt)} ({summary.timezone})
+          </div>
+        )}
+      </section>
 
       <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
         <Panel title="Manual Payment">
@@ -317,6 +505,37 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   )
 }
 
+function StatCard({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+      <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</div>
+      <div className="mt-2 text-2xl font-bold text-gray-900">{value}</div>
+      <div className="mt-1 text-xs text-gray-500">{note}</div>
+    </section>
+  )
+}
+
+function MetricLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2">
+      <span className="text-sm text-gray-500">{label}</span>
+      <span className="text-sm font-semibold text-gray-800 text-right">{value}</span>
+    </div>
+  )
+}
+
+function FunnelLine({ label, count, rate }: { label: string; count: string; rate: string }) {
+  return (
+    <div className="rounded-lg bg-gray-50 px-3 py-2">
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-sm text-gray-500">{label}</span>
+        <span className="text-sm font-semibold text-gray-800">{count}</span>
+      </div>
+      <div className="mt-1 text-xs text-gray-400">{rate} of total users</div>
+    </div>
+  )
+}
+
 function AdminSelect({ label, value, onChange, children }: {
   label: string
   value: string
@@ -381,4 +600,22 @@ function toMoney(value: number | string) {
 
 function toInr(value: number | string) {
   return Math.round(Number(value || 0) * 83.5)
+}
+
+function formatCount(value: string | number | null | undefined) {
+  return Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })
+}
+
+function formatDecimal(value: string | number | null | undefined) {
+  return Number(value || 0).toFixed(1)
+}
+
+function formatMoney(value: string | number | null | undefined) {
+  return Number(value || 0).toFixed(2)
+}
+
+function percent(numerator: string | number | null | undefined, denominator: string | number | null | undefined) {
+  const base = Number(denominator || 0)
+  if (!base) return '0.0%'
+  return `${((Number(numerator || 0) / base) * 100).toFixed(1)}%`
 }

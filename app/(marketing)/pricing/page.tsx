@@ -1,14 +1,15 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { faqJsonLd, pageOpenGraph } from '@/lib/seo'
+import { breadcrumbJsonLd, faqJsonLd, pageOpenGraph } from '@/lib/seo'
 
-const PAGE_DESCRIPTION = 'Simple, affordable AI communication coaching pricing for individual professionals and teams. Free forever plan, Pro at ₹499/month, and Teams plans available.'
+const PAGE_TITLE = 'AI English Speaking Coach Pricing'
+const PAGE_DESCRIPTION = 'AuraXpress pricing for AI English speaking practice. Start with a free plan, upgrade to Pro at ₹499/month, or choose Teams for workplace communication training.'
 
 export const metadata: Metadata = {
-  title: 'Pricing',
+  title: PAGE_TITLE,
   description: PAGE_DESCRIPTION,
   alternates: { canonical: '/pricing' },
-  openGraph: pageOpenGraph({ url: '/pricing', title: 'Pricing — AuraXpress', description: PAGE_DESCRIPTION }),
+  openGraph: pageOpenGraph({ url: '/pricing', title: `${PAGE_TITLE} — AuraXpress`, description: PAGE_DESCRIPTION }),
 }
 
 const PLANS = [
@@ -119,14 +120,19 @@ export default function PricingPage() {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(FAQ.map(f => ({ q: f.q, a: f.a })))) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            faqJsonLd(FAQ.map(f => ({ q: f.q, a: f.a }))),
+            breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Pricing', path: '/pricing' }]),
+          ]),
+        }}
       />
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-indigo-950 to-indigo-800 text-white py-20 px-6 text-center">
         <div className="max-w-3xl mx-auto">
           <div className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-4">Pricing</div>
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Simple. Affordable. No surprises.</h1>
+          <h1 className="text-4xl sm:text-5xl font-bold mb-4">AI English speaking coach pricing</h1>
           <p className="text-indigo-200 text-lg sm:text-xl max-w-xl mx-auto">
             Less than one coaching session per month. Cancel any time.
           </p>

@@ -1,11 +1,16 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { SITE_TITLE, SITE_DESCRIPTION, softwareApplicationJsonLd, pageOpenGraph } from '@/lib/seo'
+import { breadcrumbJsonLd, softwareApplicationJsonLd, pageOpenGraph } from '@/lib/seo'
+
+const PAGE_TITLE = 'AI English Speaking Coach for Indian Professionals'
+const PAGE_DESCRIPTION =
+  'Practice workplace English with AuraXpress, an AI speaking coach for Indian professionals. Get voice scenarios, role-specific feedback, filler word analysis, and spoken model answers.'
 
 export const metadata: Metadata = {
-  description: SITE_DESCRIPTION,
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
   alternates: { canonical: '/' },
-  openGraph: pageOpenGraph({ url: '/', title: SITE_TITLE, description: SITE_DESCRIPTION }),
+  openGraph: pageOpenGraph({ url: '/', title: `${PAGE_TITLE} — AuraXpress`, description: PAGE_DESCRIPTION }),
 }
 
 const STATS = [
@@ -105,7 +110,7 @@ export default function HomePage() {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([softwareApplicationJsonLd, breadcrumbJsonLd([{ name: 'Home', path: '/' }])]) }}
       />
 
       {/* Hero */}
@@ -118,12 +123,12 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight mb-6">
-              Speak English<br />
-              <span className="text-indigo-300">like you mean it.</span>
+              AI English speaking coach<br />
+              <span className="text-indigo-300">for Indian professionals.</span>
             </h1>
 
             <p className="text-lg sm:text-xl text-indigo-200 max-w-xl leading-relaxed mb-10">
-              AuraXpress listens to you speak, evaluates your response, and plays back a better version — tailored to your job, your industry, and your communication goals.
+              AuraXpress listens to your spoken English, evaluates workplace communication across 6 dimensions, and plays back a stronger answer tailored to your job, industry, and goals.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-16">

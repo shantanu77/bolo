@@ -1,15 +1,16 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { pageOpenGraph } from '@/lib/seo'
+import { breadcrumbJsonLd, pageOpenGraph } from '@/lib/seo'
 
+const PAGE_TITLE = 'AI English Speaking Practice Features'
 const PAGE_DESCRIPTION =
-  'Voice-first onboarding, role-aware AI scenarios, 6-dimension evaluation, progress tracking, and gamification — everything AuraXpress does to help professionals communicate with clarity and confidence at work.'
+  'Explore AuraXpress features for English speaking practice: voice-first onboarding, AI workplace scenarios, role-aware feedback, filler word analysis, progress tracking, and gamification.'
 
 export const metadata: Metadata = {
-  title: 'Features',
+  title: PAGE_TITLE,
   description: PAGE_DESCRIPTION,
   alternates: { canonical: '/features' },
-  openGraph: pageOpenGraph({ url: '/features', title: 'Features — AuraXpress', description: PAGE_DESCRIPTION }),
+  openGraph: pageOpenGraph({ url: '/features', title: `${PAGE_TITLE} — AuraXpress`, description: PAGE_DESCRIPTION }),
 }
 
 const CORE_FEATURES = [
@@ -102,12 +103,17 @@ const EVAL_DIMENSIONS = [
 export default function FeaturesPage() {
   return (
     <div className="bg-white text-gray-900">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Features', path: '/features' }])) }}
+      />
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-indigo-950 to-indigo-800 text-white py-16 sm:py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <div className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-4">Everything AuraXpress does</div>
-          <h1 className="text-4xl sm:text-5xl font-bold mb-6">Features built for one thing</h1>
+          <h1 className="text-4xl sm:text-5xl font-bold mb-6">AI English speaking practice features</h1>
           <p className="text-lg sm:text-xl text-indigo-200 leading-relaxed">
             Making Indian professionals sound more confident, clear, and professional in English — in the exact situations they face at work.
           </p>

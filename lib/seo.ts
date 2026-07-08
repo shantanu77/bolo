@@ -2,7 +2,7 @@ export const SITE_URL = 'https://auraxpress.com'
 export const SITE_NAME = 'AuraXpress'
 export const SITE_TITLE = 'AuraXpress — AI Communication Coach for Professionals'
 export const SITE_DESCRIPTION =
-  'AuraXpress is an AI-powered communication coach that listens to you speak, scores you across 6 dimensions, and plays back a stronger version — tailored to your job, industry, and the real situations you face at work.'
+  'AuraXpress is an AI English speaking coach for Indian professionals. Practice workplace communication with voice scenarios, 6-dimension feedback, and role-specific model answers.'
 export const TWITTER_HANDLE = '@auraxpress'
 
 export function absoluteUrl(path: string = '/'): string {
@@ -25,34 +25,56 @@ export function pageOpenGraph(overrides: { url: string; title: string; descripti
 export const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
+  '@id': `${SITE_URL}/#organization`,
   name: SITE_NAME,
   url: SITE_URL,
   logo: absoluteUrl('/icon.png'),
   description: SITE_DESCRIPTION,
   email: 'helloaura@auraxpress.com',
+  contactPoint: [{
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: 'helloaura@auraxpress.com',
+    availableLanguage: ['English', 'Hindi'],
+  }],
+  areaServed: {
+    '@type': 'Country',
+    name: 'India',
+  },
   sameAs: [] as string[],
 }
 
 export const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
+  '@id': `${SITE_URL}/#website`,
   name: SITE_NAME,
   url: SITE_URL,
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: `${SITE_URL}/features?q={search_term_string}`,
-    'query-input': 'required name=search_term_string',
-  },
+  publisher: { '@id': `${SITE_URL}/#organization` },
 }
 
 export const softwareApplicationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
+  '@id': `${SITE_URL}/#software`,
   name: SITE_NAME,
   applicationCategory: 'EducationalApplication',
   operatingSystem: 'Web',
   description: SITE_DESCRIPTION,
   url: SITE_URL,
+  publisher: { '@id': `${SITE_URL}/#organization` },
+  audience: {
+    '@type': 'Audience',
+    audienceType: 'Indian professionals, students, managers, founders, sales teams, and support teams',
+  },
+  featureList: [
+    'Voice-first English speaking practice',
+    'AI-generated workplace scenarios',
+    'Personalised categories from a voice introduction',
+    '6-dimension communication evaluation',
+    'Filler word and speaking pace feedback',
+    'Spoken model responses',
+  ],
   offers: [
     {
       '@type': 'Offer',
@@ -72,6 +94,19 @@ export const softwareApplicationJsonLd = {
     ratingValue: '4.8',
     ratingCount: '2000',
   },
+}
+
+export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
+    })),
+  }
 }
 
 export function faqJsonLd(items: { q: string; a: string }[]) {

@@ -1,14 +1,15 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { pageOpenGraph } from '@/lib/seo'
+import { breadcrumbJsonLd, pageOpenGraph } from '@/lib/seo'
 
-const PAGE_DESCRIPTION = 'Why we built AuraXpress, our mission to close India\'s professional English confidence gap, and the team behind it.'
+const PAGE_TITLE = 'About AuraXpress'
+const PAGE_DESCRIPTION = 'Learn why AuraXpress was built to help Indian professionals practise workplace English, improve communication confidence, and close the gap between capability and expression.'
 
 export const metadata: Metadata = {
-  title: 'About',
+  title: PAGE_TITLE,
   description: PAGE_DESCRIPTION,
   alternates: { canonical: '/about' },
-  openGraph: pageOpenGraph({ url: '/about', title: 'About — AuraXpress', description: PAGE_DESCRIPTION }),
+  openGraph: pageOpenGraph({ url: '/about', title: `${PAGE_TITLE} — AI English Speaking Coach`, description: PAGE_DESCRIPTION }),
 }
 
 const VALUES = [
@@ -56,6 +57,11 @@ const TIMELINE = [
 export default function AboutPage() {
   return (
     <div className="bg-white text-gray-900">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }])) }}
+      />
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-indigo-950 to-indigo-800 text-white py-16 sm:py-24 px-6">

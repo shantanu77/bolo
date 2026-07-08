@@ -109,13 +109,32 @@ async function getRows<T extends Row>(db: mysql.Connection, sql: string, params:
 
 function getDbConfig() {
   if (process.env.DATABASE_URL) {
-    const dbUrl = new URL(process.env.DATABASE_URL)
+    const databaseUrl = process.env.DATABASE_URL
+    const withoutProtocol = databaseUrl.replace(/^mysql:\/\//, '')
+    const atIndex = withoutProtocol.lastIndexOf('@')
+
+    if (atIndex === -1) {
+      throw new Error('DATABASE_URL is missing host information')
+    }
+
+    const authPart = withoutProtocol.slice(0, atIndex)
+    const hostPart = withoutProtocol.slice(atIndex + 1)
+    const colonIndex = authPart.indexOf(':')
+    const slashIndex = hostPart.indexOf('/')
+    const hostPortPart = slashIndex === -1 ? hostPart : hostPart.slice(0, slashIndex)
+    const dbNamePart = slashIndex === -1 ? '' : hostPart.slice(slashIndex + 1)
+    const hostColonIndex = hostPortPart.lastIndexOf(':')
+
+    if (colonIndex === -1 || hostColonIndex === -1 || !dbNamePart) {
+      throw new Error('DATABASE_URL format is invalid')
+    }
+
     return {
-      host: dbUrl.hostname,
-      port: Number(dbUrl.port || 3306),
-      user: decodeURIComponent(dbUrl.username),
-      password: decodeURIComponent(dbUrl.password),
-      database: dbUrl.pathname.replace(/^\//, ''),
+      host: hostPortPart.slice(0, hostColonIndex),
+      port: Number(hostPortPart.slice(hostColonIndex + 1) || 3306),
+      user: decodeURIComponent(authPart.slice(0, colonIndex)),
+      password: decodeURIComponent(authPart.slice(colonIndex + 1)),
+      database: decodeURIComponent(dbNamePart),
       timezone: '+05:30',
     }
   }

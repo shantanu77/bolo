@@ -107,6 +107,29 @@ async function getRows<T extends Row>(db: mysql.Connection, sql: string, params:
   return rows
 }
 
+function getDbConfig() {
+  if (process.env.DATABASE_URL) {
+    const dbUrl = new URL(process.env.DATABASE_URL)
+    return {
+      host: dbUrl.hostname,
+      port: Number(dbUrl.port || 3306),
+      user: decodeURIComponent(dbUrl.username),
+      password: decodeURIComponent(dbUrl.password),
+      database: dbUrl.pathname.replace(/^\//, ''),
+      timezone: '+05:30',
+    }
+  }
+
+  return {
+    host: process.env.DATABASE_HOST || 'localhost',
+    port: Number(process.env.DATABASE_PORT) || 3306,
+    user: process.env.DATABASE_USER || 'bolo_user',
+    password: process.env.DATABASE_PASSWORD || 'bolo_pass',
+    database: process.env.DATABASE_NAME || 'bolo_english',
+    timezone: '+05:30',
+  }
+}
+
 async function ensureReportingTables(db: mysql.Connection) {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS user_categories (
@@ -180,14 +203,7 @@ async function ensureReportingTables(db: mysql.Connection) {
 
 async function run() {
   const mode = process.argv.includes('--sample') ? 'sample' : 'daily'
-  const db = await mysql.createConnection({
-    host: process.env.DATABASE_HOST || 'localhost',
-    port: Number(process.env.DATABASE_PORT) || 3306,
-    user: process.env.DATABASE_USER || 'bolo_user',
-    password: process.env.DATABASE_PASSWORD || 'bolo_pass',
-    database: process.env.DATABASE_NAME || 'bolo_english',
-    timezone: '+05:30',
-  })
+  const db = await mysql.createConnection(getDbConfig())
   await ensureReportingTables(db)
 
   const now = new Date()

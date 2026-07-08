@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "report": "ts-node -r tsconfig-paths/register -r dotenv/config scripts/send-usage-report.ts"
+    "report": "ts-node -r tsconfig-paths/register -r dotenv/config scripts/send-usage-report.ts",
+    "report:daily": "ts-node -r tsconfig-paths/register -r dotenv/config scripts/send-usage-report.ts",
+    "report:test": "ts-node -r tsconfig-paths/register -r dotenv/config scripts/send-usage-report.ts --sample",
+    "report:install-cron": "bash scripts/install-report-cron.sh"
   },
   "dependencies": {
     "@deepgram/sdk": "^5.5.0",

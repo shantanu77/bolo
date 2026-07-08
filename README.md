@@ -157,6 +157,31 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
+## Admin Usage Report
+
+The repo includes a daily admin summary email for product usage, growth, subscription, revenue, and AI cost metrics.
+
+Add these env vars if you want to override the defaults:
+
+```bash
+ADMIN_REPORT_EMAIL="shantanu@mobileyug.com"
+ADMIN_REPORT_TIMEZONE="Asia/Kolkata"
+ADMIN_REPORT_APP_NAME="AuraXpress"
+ADMIN_REPORT_USD_INR="83.5"
+```
+
+Commands:
+
+```bash
+npm run report:test
+npm run report:daily
+npm run report:install-cron
+```
+
+The cron installer schedules the report for `00:05` every day and logs to `/tmp/auraxpress-usage-report.log`.
+
+---
+
 ## Project Structure
 
 ```

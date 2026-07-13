@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
          SUM(total_tokens) as usage_total_tokens,
          SUM(cost_usd) as usage_cost_usd,
          SUM(CASE WHEN model = 'gpt-4o' THEN cost_usd ELSE 0 END) as gpt_cost_usd,
-         SUM(CASE WHEN model = 'tts-1' THEN cost_usd ELSE 0 END) as tts_cost_usd,
+         SUM(CASE WHEN call_type = 'tts' THEN cost_usd ELSE 0 END) as tts_cost_usd,
          SUM(CASE WHEN model = 'nova-2' THEN cost_usd ELSE 0 END) as stt_cost_usd
        FROM api_usage
        WHERE user_id IS NOT NULL

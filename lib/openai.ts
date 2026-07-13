@@ -228,14 +228,29 @@ export async function generateTTS(text: string, _sessionId: string, attemptId: s
   const filename = `${attemptId}.mp3`
   const filePath = path.join(storagePath, filename)
 
+  const model = process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts'
+  const voice = process.env.OPENAI_TTS_VOICE || 'marin'
+  const instructions = process.env.OPENAI_TTS_INSTRUCTIONS
+    || 'Speak in a warm, clear, natural Indian English accent. Sound like a supportive professional communication coach from India. Pronounce Indian names, cities, companies, and locations naturally and accurately. Keep the delivery confident, conversational, and easy to follow without exaggerating the accent.'
+
   const response = await openai.audio.speech.create({
-    model: 'tts-1',
-    voice: 'nova',
+    model,
+    voice,
     input:  text,
     speed:  0.95,
+    ...(model === 'tts-1' || model === 'tts-1-hd' ? {} : { instructions }),
   })
 
-  logUsage({ userId, callType: 'tts', model: 'tts-1', units: text.length })
+  const estimatedInputTokens = Math.ceil(text.length / 4)
+  const estimatedAudioTokens = Math.ceil(text.split(/\s+/).filter(Boolean).length * 8)
+  logUsage({
+    userId,
+    callType: 'tts',
+    model,
+    promptTokens: estimatedInputTokens,
+    completionTokens: estimatedAudioTokens,
+    totalTokens: estimatedInputTokens + estimatedAudioTokens,
+  })
 
   const buffer = Buffer.from(await response.arrayBuffer())
   fs.writeFileSync(filePath, buffer)

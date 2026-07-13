@@ -1,9 +1,10 @@
 import { execute } from './db'
 
-// GPT-4o pricing (USD per 1M tokens, as of July 2025)
+// Usage estimates in USD per 1M tokens/chars, updated July 2026.
 const PRICING: Record<string, { input: number; output: number }> = {
   'gpt-4o':       { input: 2.50, output: 10.00 },
   'gpt-4o-mini':  { input: 0.15, output:  0.60 },
+  'gpt-4o-mini-tts': { input: 0.60, output: 12.00 },
   'tts-1':        { input: 15.00, output: 0 },    // per 1M chars
   'nova-2':       { input: 0.0043, output: 0 },   // Deepgram: per minute
 }

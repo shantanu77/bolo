@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import Link from 'next/link'
+import PasswordStrength from '@/components/PasswordStrength'
+import { PASSWORD_MIN_LENGTH, validatePassword } from '@/lib/password'
 
 interface AdminUser {
   id: string
@@ -364,17 +367,18 @@ export default function SuperadminPage() {
             <span className="mb-1 block text-xs font-medium text-gray-500">New password</span>
             <input
               type="password"
-              minLength={8}
+              minLength={PASSWORD_MIN_LENGTH}
               maxLength={128}
               autoComplete="new-password"
               value={passwordReset.password}
               onChange={event => setPasswordReset(p => ({ ...p, password: event.target.value }))}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800"
             />
+            <PasswordStrength password={passwordReset.password} />
           </label>
           <p className="text-xs text-gray-400">The password will be set immediately and emailed to the selected user.</p>
           <button
-            disabled={!passwordReset.userId || passwordReset.password.length < 8 || workingUserId === passwordReset.userId}
+            disabled={!passwordReset.userId || Boolean(validatePassword(passwordReset.password)) || workingUserId === passwordReset.userId}
             onClick={async () => {
               await patchUser(passwordReset.userId, { action: 'set_password', password: passwordReset.password }, 'Password changed and emailed to user')
               setPasswordReset(p => ({ ...p, password: '' }))
@@ -470,8 +474,8 @@ export default function SuperadminPage() {
             ) : users.map(user => (
               <tr key={user.id} className="align-top">
                 <td className="px-4 py-4">
-                  <div className="font-semibold text-gray-800">{user.name}</div>
-                  <div className="text-xs text-gray-400">{user.email}</div>
+                  <Link href={`/superadmin/users/${user.id}`} className="font-semibold text-indigo-700 hover:underline">{user.name}</Link>
+                  <Link href={`/superadmin/users/${user.id}`} className="block text-xs text-gray-400 hover:text-indigo-600">{user.email}</Link>
                   <div className="text-xs text-gray-400 mt-1">Joined {formatDate(user.created_at)}</div>
                 </td>
                 <td className="px-4 py-4">
@@ -523,6 +527,9 @@ export default function SuperadminPage() {
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex flex-wrap gap-2">
+                    <Link href={`/superadmin/users/${user.id}`} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50">
+                      View
+                    </Link>
                     <button
                       disabled={workingUserId === user.id}
                       onClick={() => patchUser(user.id, {

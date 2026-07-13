@@ -5,6 +5,7 @@ import { execute, queryOne } from '@/lib/db'
 import { ensureUserAdminColumns } from '@/lib/admin'
 import { ensureEmailVerificationColumns, sendVerificationEmail } from '@/lib/email-verification'
 import { checkAndRecordRegistrationAttempt } from '@/lib/registration-security'
+import { validatePassword } from '@/lib/password'
 
 export async function POST(req: NextRequest) {
   const { name, email, password, website, formStartedAt } = await req.json()
@@ -26,9 +27,8 @@ export async function POST(req: NextRequest) {
   if (normalizedName.length < 2 || normalizedName.length > 100 || /https?:\/\//i.test(normalizedName)) {
     return NextResponse.json({ error: 'Enter a valid name' }, { status: 400 })
   }
-  if (password.length < 8) {
-    return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
-  }
+  const passwordError = validatePassword(String(password))
+  if (passwordError) return NextResponse.json({ error: passwordError }, { status: 400 })
 
   const startedAt = Number(formStartedAt)
   if (!Number.isFinite(startedAt) || Date.now() - startedAt < 2000 || Date.now() - startedAt > 24 * 60 * 60 * 1000) {

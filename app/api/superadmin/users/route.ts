@@ -9,6 +9,8 @@ import { ensureUserAdminColumns, isSuperadminUser } from '@/lib/admin'
 import { ensurePaymentOrdersTable } from '@/lib/billing'
 import { ensureApiUsageTable } from '@/lib/usage'
 import { createMailTransport, sender } from '@/lib/mail'
+import { validatePassword } from '@/lib/password'
+import { ensurePasswordResetStorage } from '@/lib/password-reset'
 
 const USER_STATUSES = new Set(['active', 'suspended', 'pending_verification'])
 const SUBSCRIPTION_TYPES = new Set(['free', 'pro_trial', 'pro'])
@@ -174,12 +176,15 @@ export async function PATCH(req: NextRequest) {
 
   if (action === 'set_password') {
     const password = typeof body.password === 'string' ? body.password : ''
-    if (password.length < 8 || password.length > 128) {
-      return NextResponse.json({ error: 'Password must be between 8 and 128 characters' }, { status: 400 })
-    }
+    const passwordError = validatePassword(password)
+    if (passwordError) return NextResponse.json({ error: passwordError }, { status: 400 })
 
     const passwordHash = await bcrypt.hash(password, 12)
-    await execute('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, userId])
+    await ensurePasswordResetStorage()
+    await execute(
+      'UPDATE users SET password_hash = ?, password_reset_token_hash = NULL, password_reset_expires = NULL WHERE id = ?',
+      [passwordHash, userId]
+    )
 
     try {
       await sendPasswordChangedEmail({ to: user.email, name: user.name, password })

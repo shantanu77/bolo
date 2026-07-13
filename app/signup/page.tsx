@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import PasswordStrength from '@/components/PasswordStrength'
+import { PASSWORD_MIN_LENGTH } from '@/lib/password'
 
 export default function SignupPage() {
   const [form, setForm]       = useState({ name: '', email: '', password: '', website: '' })
@@ -77,7 +79,7 @@ export default function SignupPage() {
             {[
               { label: 'Your name',  key: 'name',     type: 'text',     placeholder: 'Rahul Sharma' },
               { label: 'Email',      key: 'email',    type: 'email',    placeholder: 'you@company.com' },
-              { label: 'Password',   key: 'password', type: 'password', placeholder: 'Min. 8 characters' },
+              { label: 'Password',   key: 'password', type: 'password', placeholder: 'Create a strong password' },
             ].map(f => (
               <div key={f.key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>
@@ -86,10 +88,11 @@ export default function SignupPage() {
                   value={(form as Record<string, string>)[f.key]}
                   onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                   required
-                  minLength={f.key === 'password' ? 8 : undefined}
+                  minLength={f.key === 'password' ? PASSWORD_MIN_LENGTH : undefined}
                   className="w-full border border-gray-200 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   placeholder={f.placeholder}
                 />
+                {f.key === 'password' && <PasswordStrength password={form.password} />}
               </div>
             ))}
           </div>

@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
   email_verified_at DATETIME,
   email_verification_token_hash VARCHAR(64),
   email_verification_expires DATETIME,
+  password_reset_token_hash VARCHAR(64),
+  password_reset_expires DATETIME,
   password_hash VARCHAR(255) NOT NULL,
   subscription_tier VARCHAR(20) NOT NULL DEFAULT 'free',
   subscription_ends DATETIME,
@@ -236,4 +238,14 @@ CREATE TABLE IF NOT EXISTS registration_attempts (
   INDEX idx_registration_attempts_ip_created (ip_hash, created_at),
   INDEX idx_registration_attempts_email_created (email_hash, created_at),
   INDEX idx_registration_attempts_created (created_at)
+);
+
+CREATE TABLE IF NOT EXISTS password_reset_requests (
+  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  ip_hash    CHAR(64) NOT NULL,
+  email_hash CHAR(64) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT NOW(),
+  INDEX idx_password_reset_ip_created (ip_hash, created_at),
+  INDEX idx_password_reset_email_created (email_hash, created_at),
+  INDEX idx_password_reset_created (created_at)
 );

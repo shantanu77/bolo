@@ -51,12 +51,19 @@ interface AdminSummaryResponse {
 const SUBSCRIPTION_TYPES = ['free', 'pro_trial', 'pro']
 const ACCOUNT_STATUSES = ['active', 'suspended', 'pending_verification']
 const USER_ROLES = ['user', 'superadmin']
+const DEFAULT_USER_FILTERS = {
+  status: 'not_suspended',
+  plan: 'all',
+  role: 'all',
+  verified: 'all',
+}
 
 export default function SuperadminPage() {
   const { data: session } = useSession()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [summary, setSummary] = useState<AdminSummaryResponse | null>(null)
   const [search, setSearch] = useState('')
+  const [userFilters, setUserFilters] = useState(DEFAULT_USER_FILTERS)
   const [loading, setLoading] = useState(true)
   const [summaryLoading, setSummaryLoading] = useState(true)
   const [workingUserId, setWorkingUserId] = useState('')
@@ -93,12 +100,12 @@ export default function SuperadminPage() {
     }
   }, [])
 
-  const loadUsers = useCallback(async (nextSearch = '') => {
+  const loadUsers = useCallback(async (nextSearch = '', nextFilters = DEFAULT_USER_FILTERS) => {
     setLoading(true)
     setError('')
     try {
-      const qs = nextSearch ? `?search=${encodeURIComponent(nextSearch)}` : ''
-      const res = await fetch(`/api/superadmin/users${qs}`)
+      const params = new URLSearchParams({ search: nextSearch, ...nextFilters })
+      const res = await fetch(`/api/superadmin/users?${params.toString()}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Could not load users.')
       setUsers(data.users ?? [])
@@ -131,7 +138,7 @@ export default function SuperadminPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Action failed.')
       setMessage(data.message ?? success)
-      await Promise.all([loadUsers(search), loadSummary()])
+      await Promise.all([loadUsers(search, userFilters), loadSummary()])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Action failed.')
     } finally {
@@ -153,7 +160,7 @@ export default function SuperadminPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Cleanup failed.')
       setMessage(`${data.deleted ?? 0} spam accounts deleted`)
-      await Promise.all([loadUsers(search), loadSummary()])
+      await Promise.all([loadUsers(search, userFilters), loadSummary()])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Cleanup failed.')
     } finally {
@@ -188,7 +195,7 @@ export default function SuperadminPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto lg:mx-0">
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mb-6 flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Superadmin</h1>
           <p className="text-sm text-gray-500 mt-1">Manage registered users, trials, suspensions, and manual payments.</p>
@@ -196,18 +203,49 @@ export default function SuperadminPage() {
         <form
           onSubmit={event => {
             event.preventDefault()
-            loadUsers(search)
+            loadUsers(search, userFilters)
           }}
-          className="flex gap-2"
+          className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_repeat(4,minmax(140px,auto))_auto_auto]"
         >
           <input
             value={search}
             onChange={event => setSearch(event.target.value)}
             placeholder="Search name or email"
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 lg:w-72"
+            className="min-h-11 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
-          <button className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
-            Search
+          <FilterSelect label="Account status" value={userFilters.status} onChange={value => setUserFilters(filters => ({ ...filters, status: value }))}>
+            <option value="not_suspended">Active + pending</option>
+            <option value="active">Active only</option>
+            <option value="pending_verification">Pending only</option>
+            <option value="suspended">Suspended only</option>
+            <option value="all">All statuses</option>
+          </FilterSelect>
+          <FilterSelect label="Plan" value={userFilters.plan} onChange={value => setUserFilters(filters => ({ ...filters, plan: value }))}>
+            <option value="all">All plans</option>
+            {SUBSCRIPTION_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+          </FilterSelect>
+          <FilterSelect label="Role" value={userFilters.role} onChange={value => setUserFilters(filters => ({ ...filters, role: value }))}>
+            <option value="all">All roles</option>
+            {USER_ROLES.map(role => <option key={role} value={role}>{role}</option>)}
+          </FilterSelect>
+          <FilterSelect label="Email" value={userFilters.verified} onChange={value => setUserFilters(filters => ({ ...filters, verified: value }))}>
+            <option value="all">Any verification</option>
+            <option value="verified">Verified</option>
+            <option value="unverified">Unverified</option>
+          </FilterSelect>
+          <button className="min-h-11 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+            Apply
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSearch('')
+              setUserFilters(DEFAULT_USER_FILTERS)
+              loadUsers('', DEFAULT_USER_FILTERS)
+            }}
+            className="min-h-11 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+          >
+            Reset
           </button>
         </form>
       </div>
@@ -625,6 +663,27 @@ function AdminSelect({ label, value, onChange, children }: {
         value={value}
         onChange={event => onChange(event.target.value)}
         className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800"
+      >
+        {children}
+      </select>
+    </label>
+  )
+}
+
+function FilterSelect({ label, value, onChange, children }: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  children: React.ReactNode
+}) {
+  return (
+    <label className="relative block">
+      <span className="sr-only">{label}</span>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={event => onChange(event.target.value)}
+        className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
       >
         {children}
       </select>

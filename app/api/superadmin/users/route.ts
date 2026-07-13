@@ -27,6 +27,16 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const search = searchParams.get('search')?.trim() ?? ''
   const like = `%${search}%`
+  const requestedStatus = searchParams.get('status') ?? 'not_suspended'
+  const status = new Set(['not_suspended', 'active', 'pending_verification', 'suspended', 'all']).has(requestedStatus)
+    ? requestedStatus
+    : 'not_suspended'
+  const requestedPlan = searchParams.get('plan') ?? 'all'
+  const plan = requestedPlan === 'all' || SUBSCRIPTION_TYPES.has(requestedPlan) ? requestedPlan : 'all'
+  const requestedRole = searchParams.get('role') ?? 'all'
+  const role = requestedRole === 'all' || USER_ROLES.has(requestedRole) ? requestedRole : 'all'
+  const requestedVerified = searchParams.get('verified') ?? 'all'
+  const verified = new Set(['all', 'verified', 'unverified']).has(requestedVerified) ? requestedVerified : 'all'
 
   const users = await query(
     `SELECT
@@ -71,9 +81,13 @@ export async function GET(req: NextRequest) {
        GROUP BY user_id
      ) usage_stats ON usage_stats.user_id = u.id
      WHERE (? = '' OR u.name LIKE ? OR u.email LIKE ?)
+       AND (? = 'all' OR (? = 'not_suspended' AND u.account_status <> 'suspended') OR u.account_status = ?)
+       AND (? = 'all' OR u.subscription_tier = ?)
+       AND (? = 'all' OR u.user_role = ?)
+       AND (? = 'all' OR (? = 'verified' AND u.email_verified_at IS NOT NULL) OR (? = 'unverified' AND u.email_verified_at IS NULL))
      ORDER BY u.created_at DESC
      LIMIT 200`,
-    [search, like, like]
+    [search, like, like, status, status, status, plan, plan, role, role, verified, verified, verified]
   )
 
   const cleanup = await queryOne<{ candidate_count: number }>(
@@ -88,7 +102,11 @@ export async function GET(req: NextRequest) {
        AND NOT EXISTS (SELECT 1 FROM payment_orders p WHERE p.user_id = u.id AND p.status = 'paid')`
   )
 
-  return NextResponse.json({ users, spamCleanupCandidates: Number(cleanup?.candidate_count ?? 0) })
+  return NextResponse.json({
+    users,
+    spamCleanupCandidates: Number(cleanup?.candidate_count ?? 0),
+    filters: { search, status, plan, role, verified },
+  })
 }
 
 export async function PATCH(req: NextRequest) {

@@ -69,7 +69,11 @@ export default function OnboardingPage() {
       body: JSON.stringify(form),
     })
     // Trigger AI category generation in the background (non-blocking)
-    fetch('/api/generate/categories', { method: 'POST' }).catch(() => null)
+    fetch('/api/generate/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trigger: 'onboarding_completed' }),
+    }).catch(() => null)
     router.push('/dashboard')
   }
 

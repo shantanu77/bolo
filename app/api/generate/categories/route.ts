@@ -14,6 +14,14 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
+  const trigger = body.trigger
+  if (trigger !== 'onboarding_completed' && trigger !== 'profile_updated') {
+    return NextResponse.json(
+      { error: 'Category generation requires an explicit onboarding or profile update action.' },
+      { status: 400 }
+    )
+  }
+
   const forceRegenerate = body.force === true
 
   // Don't regenerate if already done (unless forced)

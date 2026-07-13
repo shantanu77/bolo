@@ -201,19 +201,12 @@ function PracticeContent() {
     }
   }, [pollGenerationJob])
 
-  // Load user categories; auto-generate if none yet
+  // Page visits must only load saved categories. Category generation is an
+  // explicit onboarding/profile action and must never block this menu.
   useEffect(() => {
     fetchJson('/api/generate/categories', { method: 'GET' })
-      .then(async d => {
-        const categories = d.categories ?? []
-        const hasPersonaCategories = categories.some((cat: UserCategory) => cat.source === 'ai_generated')
-        if (!hasPersonaCategories) {
-          const gen = await fetchJson('/api/generate/categories', { method: 'POST' })
-          const generated = gen.categories ?? []
-          setUserCats(mergeCategories(categories, generated))
-        } else {
-          setUserCats(categories)
-        }
+      .then(d => {
+        setUserCats(d.categories ?? [])
         setLoadingCats(false)
       })
       .catch(err => {
@@ -366,7 +359,7 @@ function PracticeContent() {
             <div className="space-y-2">
               {[1,2,3,4].map(i => <div key={i} className="h-10 bg-gray-100 rounded-lg animate-pulse" />)}
             </div>
-            <p className="text-xs text-indigo-500 mt-3 text-center">Generating your personalised categories…</p>
+            <p className="text-xs text-indigo-500 mt-3 text-center">Loading your practice areas…</p>
           </div>
         ) : (
           <>
@@ -533,12 +526,6 @@ async function startGenerationJob(url: string, init: RequestInit) {
   const data = await fetchJson(url, init) as { job?: GenerationJob }
   if (!data.job?.id) throw new Error('Could not start category generation.')
   return { job: data.job }
-}
-
-function mergeCategories(existing: UserCategory[], generated: UserCategory[]) {
-  const byId = new Map<string, UserCategory>()
-  for (const cat of [...generated, ...existing]) byId.set(cat.id, cat)
-  return Array.from(byId.values())
 }
 
 function GenerationProgress({ state, compact = false }: { state: GeneratingState; compact?: boolean }) {

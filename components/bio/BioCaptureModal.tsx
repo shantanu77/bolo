@@ -137,7 +137,7 @@ export default function BioCaptureModal({ onDone, onClose }: Props) {
     fetch('/api/generate/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ force: true }),
+      body: JSON.stringify({ force: true, trigger: 'profile_updated' }),
     }).catch(() => null)
     onDone({ transcript, structured: structured! })
   }

@@ -10,6 +10,32 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  min-width: 320px;
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 @keyframes pulse-ring {

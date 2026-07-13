@@ -3,7 +3,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 
 export default function SignupPage() {
-  const [form, setForm]       = useState({ name: '', email: '', password: '' })
+  const [form, setForm]       = useState({ name: '', email: '', password: '', website: '' })
+  const [formStartedAt]       = useState(() => Date.now())
   const [error, setError]     = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,7 +18,7 @@ export default function SignupPage() {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, formStartedAt }),
     })
     const data = await res.json()
 
@@ -61,6 +62,18 @@ export default function SignupPage() {
           )}
 
           <div className="space-y-4">
+            <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+              <label htmlFor="website">Website</label>
+              <input
+                id="website"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.website}
+                onChange={e => setForm(p => ({ ...p, website: e.target.value }))}
+              />
+            </div>
             {[
               { label: 'Your name',  key: 'name',     type: 'text',     placeholder: 'Rahul Sharma' },
               { label: 'Email',      key: 'email',    type: 'email',    placeholder: 'you@company.com' },

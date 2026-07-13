@@ -46,7 +46,7 @@ interface AdminSummaryResponse {
 }
 
 const SUBSCRIPTION_TYPES = ['free', 'pro_trial', 'pro']
-const ACCOUNT_STATUSES = ['active', 'suspended']
+const ACCOUNT_STATUSES = ['active', 'suspended', 'pending_verification']
 const USER_ROLES = ['user', 'superadmin']
 
 export default function SuperadminPage() {
@@ -57,6 +57,7 @@ export default function SuperadminPage() {
   const [loading, setLoading] = useState(true)
   const [summaryLoading, setSummaryLoading] = useState(true)
   const [workingUserId, setWorkingUserId] = useState('')
+  const [spamCleanupCandidates, setSpamCleanupCandidates] = useState(0)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [manualPayment, setManualPayment] = useState({
@@ -73,6 +74,7 @@ export default function SuperadminPage() {
     receipt: '',
     notes: '',
   })
+  const [passwordReset, setPasswordReset] = useState({ userId: '', password: '' })
 
   const loadSummary = useCallback(async () => {
     setSummaryLoading(true)
@@ -97,6 +99,7 @@ export default function SuperadminPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Could not load users.')
       setUsers(data.users ?? [])
+      setSpamCleanupCandidates(Number(data.spamCleanupCandidates ?? 0))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load users.')
     } finally {
@@ -124,10 +127,32 @@ export default function SuperadminPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Action failed.')
-      setMessage(success)
+      setMessage(data.message ?? success)
       await Promise.all([loadUsers(search), loadSummary()])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Action failed.')
+    } finally {
+      setWorkingUserId('')
+    }
+  }
+
+  async function cleanupSpamAccounts() {
+    if (!window.confirm(`Permanently delete ${spamCleanupCandidates} old unverified accounts with no activity or payment?`)) return
+    setWorkingUserId('spam-cleanup')
+    setMessage('')
+    setError('')
+    try {
+      const res = await fetch('/api/superadmin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cleanup_spam', confirmation: 'DELETE_UNVERIFIED_SPAM', days: 2 }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Cleanup failed.')
+      setMessage(`${data.deleted ?? 0} spam accounts deleted`)
+      await Promise.all([loadUsers(search), loadSummary()])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Cleanup failed.')
     } finally {
       setWorkingUserId('')
     }
@@ -330,6 +355,50 @@ export default function SuperadminPage() {
       </section>
 
       <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Panel title="Set User Password">
+          <AdminSelect label="User" value={passwordReset.userId} onChange={value => setPasswordReset(p => ({ ...p, userId: value }))}>
+            <option value="">Select user</option>
+            {users.map(user => <option key={user.id} value={user.id}>{user.name} - {user.email}</option>)}
+          </AdminSelect>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-gray-500">New password</span>
+            <input
+              type="password"
+              minLength={8}
+              maxLength={128}
+              autoComplete="new-password"
+              value={passwordReset.password}
+              onChange={event => setPasswordReset(p => ({ ...p, password: event.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800"
+            />
+          </label>
+          <p className="text-xs text-gray-400">The password will be set immediately and emailed to the selected user.</p>
+          <button
+            disabled={!passwordReset.userId || passwordReset.password.length < 8 || workingUserId === passwordReset.userId}
+            onClick={async () => {
+              await patchUser(passwordReset.userId, { action: 'set_password', password: passwordReset.password }, 'Password changed and emailed to user')
+              setPasswordReset(p => ({ ...p, password: '' }))
+            }}
+            className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+          >
+            Set & Email Password
+          </button>
+        </Panel>
+
+        <Panel title="Spam Account Cleanup">
+          <div className="rounded-lg bg-gray-50 px-3 py-3">
+            <div className="text-2xl font-bold text-gray-900">{spamCleanupCandidates}</div>
+            <div className="mt-1 text-xs text-gray-500">Unverified accounts older than 48 hours with no activity or successful payment.</div>
+          </div>
+          <button
+            disabled={!spamCleanupCandidates || workingUserId === 'spam-cleanup'}
+            onClick={cleanupSpamAccounts}
+            className="mt-3 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+          >
+            {workingUserId === 'spam-cleanup' ? 'Cleaning...' : 'Delete Spam Accounts'}
+          </button>
+        </Panel>
+
         <Panel title="Manual Payment">
           <AdminSelect label="User" value={manualPayment.userId} onChange={value => setManualPayment(p => ({ ...p, userId: value }))}>
             <option value="">Select user</option>

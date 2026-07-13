@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
@@ -54,6 +54,19 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-icon.png' }],
   },
   manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: SITE_NAME,
+  },
+  formatDetection: { telephone: false },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#4f46e5',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

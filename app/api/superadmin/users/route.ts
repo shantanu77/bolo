@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import nodemailer from 'nodemailer'
+import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
 import { authOptions } from '@/lib/auth'
 import { execute, query, queryOne } from '@/lib/db'
 import { ensureUserAdminColumns, isSuperadminUser } from '@/lib/admin'
 import { ensurePaymentOrdersTable } from '@/lib/billing'
 import { ensureApiUsageTable } from '@/lib/usage'
+import { createMailTransport, sender } from '@/lib/mail'
 
-const USER_STATUSES = new Set(['active', 'suspended'])
+const USER_STATUSES = new Set(['active', 'suspended', 'pending_verification'])
 const SUBSCRIPTION_TYPES = new Set(['free', 'pro_trial', 'pro'])
 const USER_ROLES = new Set(['user', 'superadmin'])
 
@@ -72,7 +74,19 @@ export async function GET(req: NextRequest) {
     [search, like, like]
   )
 
-  return NextResponse.json({ users })
+  const cleanup = await queryOne<{ candidate_count: number }>(
+    `SELECT COUNT(*) AS candidate_count
+     FROM users u
+     WHERE u.account_status = 'pending_verification'
+       AND u.email_verified_at IS NULL
+       AND u.user_role <> 'superadmin'
+       AND u.created_at < DATE_SUB(NOW(), INTERVAL 2 DAY)
+       AND NOT EXISTS (SELECT 1 FROM sessions s WHERE s.user_id = u.id)
+       AND NOT EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = u.id)
+       AND NOT EXISTS (SELECT 1 FROM payment_orders p WHERE p.user_id = u.id AND p.status = 'paid')`
+  )
+
+  return NextResponse.json({ users, spamCleanupCandidates: Number(cleanup?.candidate_count ?? 0) })
 }
 
 export async function PATCH(req: NextRequest) {
@@ -85,6 +99,39 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json()
   const action = body.action
+
+  if (action === 'cleanup_spam') {
+    if (body.confirmation !== 'DELETE_UNVERIFIED_SPAM') {
+      return NextResponse.json({ error: 'Cleanup confirmation is required' }, { status: 400 })
+    }
+
+    const days = clampNumber(body.days, 2, 365, 2)
+    await execute(
+      `DELETE au FROM api_usage au
+       JOIN users u ON u.id = au.user_id
+       WHERE u.account_status = 'pending_verification'
+         AND u.email_verified_at IS NULL
+         AND u.user_role <> 'superadmin'
+         AND u.created_at < DATE_SUB(NOW(), INTERVAL ? DAY)
+         AND NOT EXISTS (SELECT 1 FROM sessions s WHERE s.user_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM payment_orders p WHERE p.user_id = u.id AND p.status = 'paid')`,
+      [days]
+    )
+    const result = await execute(
+      `DELETE u FROM users u
+       WHERE u.account_status = 'pending_verification'
+         AND u.email_verified_at IS NULL
+         AND u.user_role <> 'superadmin'
+         AND u.created_at < DATE_SUB(NOW(), INTERVAL ? DAY)
+         AND NOT EXISTS (SELECT 1 FROM sessions s WHERE s.user_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM payment_orders p WHERE p.user_id = u.id AND p.status = 'paid')`,
+      [days]
+    )
+    return NextResponse.json({ success: true, deleted: result.affectedRows })
+  }
+
   const userId = clean(body.userId, 36)
   if (!userId) return NextResponse.json({ error: 'userId is required' }, { status: 400 })
 
@@ -123,6 +170,28 @@ export async function PATCH(req: NextRequest) {
       [days, userId]
     )
     return NextResponse.json({ success: true })
+  }
+
+  if (action === 'set_password') {
+    const password = typeof body.password === 'string' ? body.password : ''
+    if (password.length < 8 || password.length > 128) {
+      return NextResponse.json({ error: 'Password must be between 8 and 128 characters' }, { status: 400 })
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12)
+    await execute('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, userId])
+
+    try {
+      await sendPasswordChangedEmail({ to: user.email, name: user.name, password })
+      return NextResponse.json({ success: true, emailSent: true })
+    } catch (error) {
+      console.error('Password changed but email delivery failed', error)
+      return NextResponse.json({
+        success: true,
+        emailSent: false,
+        message: 'Password was changed, but the email could not be sent. Please retry with a new password.',
+      })
+    }
   }
 
   if (action === 'manual_payment') {
@@ -181,6 +250,31 @@ export async function PATCH(req: NextRequest) {
   }
 
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+}
+
+async function sendPasswordChangedEmail(params: { to: string; name: string; password: string }) {
+  const transporter = createMailTransport()
+  await transporter.sendMail({
+    from: sender('AuraXpress Support'),
+    to: params.to,
+    subject: 'Your AuraXpress password was updated',
+    text: `Hi ${params.name},
+
+An AuraXpress administrator has set a new password for your account.
+
+New password: ${params.password}
+
+Sign in and keep this password private. If you did not expect this change, contact AuraXpress support immediately.
+
+AuraXpress`,
+    html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+      <p>Hi ${escapeHtml(params.name)},</p>
+      <p>An AuraXpress administrator has set a new password for your account.</p>
+      <p style="padding:12px;background:#f3f4f6;border-radius:8px"><strong>New password:</strong> ${escapeHtml(params.password)}</p>
+      <p>Sign in and keep this password private. If you did not expect this change, contact AuraXpress support immediately.</p>
+      <p>AuraXpress</p>
+    </div>`,
+  })
 }
 
 async function sendReceiptEmail(params: {

@@ -227,3 +227,13 @@ CREATE TABLE IF NOT EXISTS learning_guides (
 
 CREATE INDEX idx_learning_guides_user_created ON learning_guides(user_id, created_at);
 CREATE INDEX idx_learning_guides_dimension ON learning_guides(dimension);
+
+CREATE TABLE IF NOT EXISTS registration_attempts (
+  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  ip_hash    CHAR(64) NOT NULL,
+  email_hash CHAR(64) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT NOW(),
+  INDEX idx_registration_attempts_ip_created (ip_hash, created_at),
+  INDEX idx_registration_attempts_email_created (email_hash, created_at),
+  INDEX idx_registration_attempts_created (created_at)
+);

@@ -71,7 +71,7 @@ export default function CoachChat() {
       {/* Floating button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-300 flex items-center justify-center transition text-2xl"
+        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-3 sm:bottom-6 sm:right-6 z-50 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-300 flex items-center justify-center transition text-2xl"
         aria-label="Open AuraXpress Coach"
       >
         {open ? '✕' : '💬'}
@@ -84,7 +84,7 @@ export default function CoachChat() {
 
       {/* Chat window */}
       {open && (
-        <div className={`fixed inset-x-3 bottom-20 sm:inset-x-auto sm:right-6 sm:bottom-24 z-50 ${windowW} ${windowH} flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transition-all duration-200`}>
+        <div className={`fixed inset-x-2 bottom-[calc(9rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh-11rem)] sm:inset-x-auto sm:right-6 sm:bottom-24 z-50 ${windowW} ${windowH} flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transition-all duration-200`}>
 
           {/* Header */}
           <div className="bg-indigo-600 px-4 py-3 flex items-center gap-3 shrink-0">

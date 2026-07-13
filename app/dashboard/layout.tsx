@@ -18,6 +18,7 @@ const NAV = [
   { href: '/profile',     label: 'Profile',      icon: '⚙️' },
 ]
 const ADMIN_NAV = { href: '/superadmin', label: 'Admin', icon: '🛠️' }
+const MOBILE_PRIMARY_NAV = NAV.slice(0, 4)
 
 interface LearningGuideNavItem {
   id: string
@@ -29,6 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname()
   const { data: session } = useSession()
   const [learningGuides, setLearningGuides] = useState<LearningGuideNavItem[]>([])
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const xp   = session?.user?.xp ?? 0
   const { current, next } = getLevelForXp(xp)
   const pct  = next ? Math.round(((xp - current.xpRequired) / (next.xpRequired - current.xpRequired)) * 100) : 100
@@ -56,42 +58,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return () => { mounted = false }
   }, [session?.user?.id])
 
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [path])
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
-      <header className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-100">
-        <div className="px-4 py-3 flex items-center justify-between gap-3">
+      <header className="lg:hidden sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100">
+        <div className="px-4 py-3 flex min-h-14 items-center justify-between gap-3">
           <Link href="/dashboard" className="text-xl font-bold text-indigo-700 tracking-tight shrink-0">
             Aura<span className="text-indigo-400">Xpress</span>
           </Link>
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+          <Link href="/profile" aria-label="Open profile" className="flex min-h-11 items-center gap-2 rounded-xl px-2 hover:bg-gray-50 min-w-0">
+            <span className="hidden max-w-32 truncate text-sm font-medium text-gray-600 min-[380px]:block">{session?.user?.name}</span>
+            <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
               {session?.user?.name?.[0]?.toUpperCase() ?? '?'}
             </div>
-            <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
-            >
-              Sign out
-            </button>
-          </div>
+          </Link>
         </div>
-        <nav className="px-2 pb-2 flex gap-1 overflow-x-auto">
-          {navItems.map(n => (
-            <div key={n.href} className="shrink-0">
-              <Link href={n.href}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                  path === n.href || (n.href !== '/dashboard' && path.startsWith(n.href))
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <span>{n.icon}</span>{n.label}
-              </Link>
-            </div>
-          ))}
-        </nav>
         {showLearningGuides && learningGuides.length > 0 && (
-          <nav className="px-2 pb-2 flex gap-1 overflow-x-auto">
+          <nav className="px-3 pb-2 flex gap-1 overflow-x-auto [scrollbar-width:none]">
             {learningGuides.map(guide => (
               <Link
                 key={guide.id}
@@ -182,7 +168,45 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0 overflow-auto">{children}</main>
+      <main className="flex-1 min-w-0 overflow-auto pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-gray-200 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden" aria-label="Main navigation">
+        {MOBILE_PRIMARY_NAV.map(n => {
+          const active = path === n.href || (n.href !== '/dashboard' && path.startsWith(n.href))
+          return (
+            <Link key={n.href} href={n.href} className={`flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[10px] font-medium ${active ? 'text-indigo-700' : 'text-gray-500'}`}>
+              <span className={`text-xl leading-none ${active ? 'scale-110' : ''}`}>{n.icon}</span>
+              <span className="max-w-full truncate">{n.label === 'Learning Guide' ? 'Guides' : n.label}</span>
+            </Link>
+          )
+        })}
+        <button onClick={() => setMobileMenuOpen(true)} className="flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[10px] font-medium text-gray-500" aria-label="More navigation options">
+          <span className="text-xl leading-none">•••</span>
+          <span>More</span>
+        </button>
+      </nav>
+
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[70] flex items-end bg-black/40 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] lg:hidden" role="dialog" aria-modal="true" aria-label="More navigation">
+          <button className="absolute inset-0" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu" />
+          <div className="relative w-full rounded-2xl bg-white p-3 shadow-2xl">
+            <div className="mb-2 flex items-center justify-between px-2 py-1">
+              <div className="text-sm font-semibold text-gray-800">More</div>
+              <button onClick={() => setMobileMenuOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100" aria-label="Close menu">✕</button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {navItems.slice(4).map(n => (
+                <Link key={n.href} href={n.href} className={`flex min-h-14 items-center gap-3 rounded-xl px-4 text-sm font-medium ${path.startsWith(n.href) ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-50 text-gray-700'}`}>
+                  <span className="text-lg">{n.icon}</span>{n.label}
+                </Link>
+              ))}
+              <button onClick={() => signOut({ callbackUrl: '/' })} className="flex min-h-14 items-center gap-3 rounded-xl bg-red-50 px-4 text-left text-sm font-medium text-red-600">
+                <span className="text-lg">↩</span>Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating AI coaching chatbot */}
       <CoachChat />

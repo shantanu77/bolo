@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import OpenAI from 'openai'
 import { authOptions } from '@/lib/auth'
+import { queryOne } from '@/lib/db'
 import { getExistingLearningGuideForSource, saveLearningGuide } from '@/lib/learning-guides'
 import { logUsage } from '@/lib/usage'
 
@@ -22,6 +23,10 @@ export async function POST(req: NextRequest) {
   const scenarioQuestion = clean(body.scenario_question)
   const scenarioId = clean(body.scenario_id, 36)
   const scenarioType = ['global', 'user'].includes(body.scenario_type) ? body.scenario_type : 'global'
+  const planMode = body.plan_mode === true
+  const performanceContext = body.performance_context && typeof body.performance_context === 'object'
+    ? JSON.stringify(body.performance_context).slice(0, 1200)
+    : ''
 
   if (scenarioId) {
     const existingGuide = await getExistingLearningGuideForSource({
@@ -40,11 +45,31 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [{
-      role: 'user',
-      content: `Create a practical AI study guide for an Indian professional improving spoken English.
+  const persona = planMode
+    ? await queryOne<{
+        job_role: string | null
+        seniority: string | null
+        industry: string | null
+        challenges: unknown
+        goals: unknown
+      }>('SELECT job_role, seniority, industry, challenges, goals FROM personas WHERE user_id = ?', [session.user.id])
+    : null
+
+  const profileContext = persona
+    ? `Role: ${persona.job_role || 'Not set'}\nSeniority: ${persona.seniority || 'Not set'}\nIndustry: ${persona.industry || 'Not set'}\nChallenges: ${safeJson(persona.challenges)}\nGoals: ${safeJson(persona.goals)}`
+    : 'Profile details are not available.'
+
+  const taskPrompt = planMode
+    ? `Create a personalized 7-day spoken-English improvement plan for an Indian professional.
+
+Focus dimension: ${dimension}
+Performance summary: ${verdict || 'Not provided'}
+Score history: ${performanceContext || 'Not provided'}
+User profile:
+${profileContext}
+
+The plan must focus tightly on ${dimension}. Give short daily exercises that can be completed in 10-15 minutes, workplace-specific examples, a measurable target, and a final review task. Use the lesson headings "Days 1-2: Diagnose and learn", "Days 3-5: Deliberate practice", and "Days 6-7: Apply and measure". Make each lesson body state the exact activity, repetition count or duration, and success measure.`
+    : `Create a practical AI study guide for an Indian professional improving spoken English.
 
 Dimension: ${dimension}
 Study topic: ${topic}
@@ -53,7 +78,13 @@ What the user said: ${evidence.length ? evidence.map(item => `"${item}"`).join('
 Coach verdict: ${verdict || 'Not provided'}
 Why it matters: ${impact || 'Not provided'}
 Immediate fix: ${fix || 'Not provided'}
-Better sentence: ${rewrittenSentence || 'Not provided'}
+Better sentence: ${rewrittenSentence || 'Not provided'}`
+
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{
+      role: 'user',
+      content: `${taskPrompt}
 
 Return ONLY a JSON object:
 {
@@ -75,7 +106,9 @@ Return ONLY a JSON object:
   }
 }
 
-Make the guide specific enough to act on, but generic enough that the user can reuse it in future conversations. If the topic is vocabulary, teach better word choice and synonyms in context rather than listing random synonyms.`,
+${planMode
+  ? `Make this a concrete plan, not a general lesson. The title must include "7-Day" and the ${dimension} focus. Put the measurable end-of-week target in objective and quick_rule.`
+  : 'Make the guide specific enough to act on, but generic enough that the user can reuse it in future conversations. If the topic is vocabulary, teach better word choice and synonyms in context rather than listing random synonyms.'}`,
     }],
     response_format: { type: 'json_object' },
     temperature: 0.4,
@@ -83,7 +116,7 @@ Make the guide specific enough to act on, but generic enough that the user can r
 
   logUsage({
     userId: session.user.id,
-    callType: 'study_guide',
+    callType: planMode ? 'improvement_plan' : 'study_guide',
     model: 'gpt-4o',
     promptTokens: completion.usage?.prompt_tokens ?? 0,
     completionTokens: completion.usage?.completion_tokens ?? 0,
@@ -107,4 +140,14 @@ Make the guide specific enough to act on, but generic enough that the user can r
 
 function clean(value: unknown, maxLength = 1200) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
+}
+
+function safeJson(value: unknown) {
+  if (value == null) return 'Not set'
+  if (typeof value === 'string') return value.slice(0, 500)
+  try {
+    return JSON.stringify(value).slice(0, 500)
+  } catch {
+    return 'Not set'
+  }
 }

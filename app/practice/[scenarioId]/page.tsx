@@ -82,6 +82,45 @@ function Stars({ count }: { count: number }) {
   )
 }
 
+const ANSWER_STRUCTURE = [
+  {
+    step: 'Start',
+    instruction: 'Answer the question directly in your first sentence. State your main point clearly so the listener knows where your answer is going.',
+  },
+  {
+    step: 'Middle',
+    instruction: 'Add two or three relevant details in a logical order. Explain the situation, your reason or action, and the result or next step.',
+  },
+  {
+    step: 'End',
+    instruction: 'Close with a clear summary, outcome, or next action. Finish confidently instead of trailing off or repeating yourself.',
+  },
+]
+
+function AnswerStructureGuide() {
+  return (
+    <div className="mt-5 border-t border-gray-100 pt-5" aria-labelledby="answer-structure-heading">
+      <div className="mb-3">
+        <h2 id="answer-structure-heading" className="text-sm font-semibold text-gray-700">How to structure your answer</h2>
+        <p className="text-xs text-gray-500 mt-1">Use this simple three-part flow. You do not need to memorise exact words.</p>
+      </div>
+      <ol className="grid gap-3 sm:grid-cols-3">
+        {ANSWER_STRUCTURE.map((item, index) => (
+          <li key={item.step} className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                {index + 1}
+              </span>
+              <span className="text-sm font-semibold text-indigo-800">{item.step}</span>
+            </div>
+            <p className="text-xs leading-relaxed text-gray-600">{item.instruction}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
 function PracticeSessionContent() {
   const { scenarioId } = useParams<{ scenarioId: string }>()
   const searchParams   = useSearchParams()
@@ -367,13 +406,15 @@ function PracticeSessionContent() {
           <p className="text-sm font-semibold text-gray-600 mb-1">Question for you:</p>
           <p className="text-gray-800 font-medium leading-relaxed">{scenario?.question}</p>
         </div>
+
+        <AnswerStructureGuide />
       </div>
 
       {(phase === 'ready' || phase === 'countdown' || phase === 'recording') && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 text-center">
           {phase === 'ready' ? (
             <>
-              <p className="text-gray-500 text-sm mb-6">Read the scenario above, then tap the mic to answer.</p>
+              <p className="text-gray-500 text-sm mb-6">Read the question and plan your start, middle, and end. Then tap the mic to answer.</p>
               <button onClick={startRecording}
                 className="w-24 h-24 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-3xl shadow-lg shadow-indigo-200 transition flex items-center justify-center mx-auto"
               >

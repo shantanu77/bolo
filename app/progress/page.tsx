@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 interface ProgressData {
   user: {
@@ -35,17 +36,13 @@ const DIM_LABELS: Record<string, string> = {
   clarity: 'Clarity', fluency: 'Fluency', vocabulary: 'Vocabulary',
   structure: 'Structure', confidence: 'Confidence', tone_match: 'Tone',
 }
-const DIM_COLORS: Record<string, string> = {
-  clarity: 'bg-blue-500', fluency: 'bg-green-500', vocabulary: 'bg-purple-500',
-  structure: 'bg-yellow-500', confidence: 'bg-red-400', tone_match: 'bg-indigo-500',
-}
-const DIM_LINE_COLORS: Record<string, string> = {
-  clarity: '#3b82f6',
-  fluency: '#22c55e',
-  vocabulary: '#a855f7',
-  structure: '#eab308',
-  confidence: '#f87171',
-  tone_match: '#6366f1',
+type ProgressStatus = 'improving' | 'stable' | 'declining' | 'insufficient'
+
+const PROGRESS_STYLES: Record<ProgressStatus, { bar: string; line: string; badge: string; label: string }> = {
+  improving: { bar: 'bg-green-500', line: '#22c55e', badge: 'bg-green-100 text-green-700', label: 'Improving' },
+  stable: { bar: 'bg-amber-400', line: '#f59e0b', badge: 'bg-amber-100 text-amber-700', label: 'No clear improvement' },
+  declining: { bar: 'bg-red-500', line: '#ef4444', badge: 'bg-red-100 text-red-700', label: 'Declining' },
+  insufficient: { bar: 'bg-gray-400', line: '#9ca3af', badge: 'bg-gray-100 text-gray-600', label: 'Need more sessions' },
 }
 const DIM_SCORE_KEYS: Record<string, keyof Attempt> = {
   clarity: 'score_clarity',
@@ -84,6 +81,34 @@ function formatSessionDetailTime(value: string) {
   return sessionDetailDateFormatter.format(new Date(value))
 }
 
+function formatScore(value: number | string | null | undefined) {
+  const score = Number(value ?? 0)
+  return Number.isFinite(score) ? score.toFixed(2) : '0.00'
+}
+
+function average(values: number[]) {
+  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
+}
+
+function getDimensionProgress(attempts: Attempt[], dimension: string) {
+  const scoreKey = DIM_SCORE_KEYS[dimension]
+  const newestFirst = attempts.map(attempt => Number(attempt[scoreKey] ?? 0))
+  const recent = newestFirst.slice(0, 3)
+  const previous = newestFirst.slice(3, 6)
+
+  if (newestFirst.length < 2) {
+    return { status: 'insufficient' as ProgressStatus, change: 0, scores: newestFirst.slice().reverse() }
+  }
+
+  // Compare short rolling windows so one unusually good or bad session does not
+  // incorrectly define the user's progress.
+  const change = previous.length
+    ? average(recent) - average(previous)
+    : newestFirst[0] - newestFirst[1]
+  const status: ProgressStatus = change >= 0.15 ? 'improving' : change <= -0.15 ? 'declining' : 'stable'
+  return { status, change, scores: newestFirst.slice(0, 6).reverse() }
+}
+
 function Stars({ count }: { count: number }) {
   return (
     <span className="text-yellow-400">{'★'.repeat(count)}{'☆'.repeat(5 - count)}</span>
@@ -95,6 +120,7 @@ export default function ProgressPage() {
   const [loading, setLoading] = useState(true)
   const [selectedAttempt, setSelectedAttempt] = useState<Attempt | null>(null)
   const [selectedDimension, setSelectedDimension] = useState('clarity')
+  const [planStates, setPlanStates] = useState<Record<string, { loading?: boolean; guideId?: string; error?: string }>>({})
 
   useEffect(() => {
     fetch('/api/progress').then(r => r.json()).then(d => { setData(d); setLoading(false) })
@@ -108,7 +134,7 @@ export default function ProgressPage() {
     : 100
 
   const avgOverall = data.attempts.length
-    ? Math.round(data.attempts.reduce((s, a) => s + a.score_overall, 0) / data.attempts.length)
+    ? data.attempts.reduce((s, a) => s + a.score_overall, 0) / data.attempts.length
     : 0
 
   const worstDim = Object.entries(data.dimensionAvg).sort((a, b) => a[1] - b[1])[0]
@@ -121,6 +147,51 @@ export default function ProgressPage() {
       date: formatRecentSessionTime(attempt.created_at),
       scenario: attempt.scenario_title ?? 'Practice session',
     }))
+  const selectedProgress = getDimensionProgress(data.attempts, selectedDimension)
+
+  function askAI(dimension: string, avg: number) {
+    const progress = getDimensionProgress(data!.attempts, dimension)
+    const label = DIM_LABELS[dimension]
+    const trendDescription = progress.status === 'insufficient'
+      ? 'There is not enough history to establish a trend yet.'
+      : `The recent trend is ${PROGRESS_STYLES[progress.status].label.toLowerCase()} (${progress.change >= 0 ? '+' : ''}${formatScore(progress.change)}).`
+    const prompt = `Help me improve my ${label}. My Progress page shows an average of ${formatScore(avg)}/5. ${trendDescription} My recent ${label.toLowerCase()} scores, from oldest to newest, are ${progress.scores.map(formatScore).join(', ')}. Explain what may be holding me back and give me specific, practical exercises and an example suited to my work profile.`
+
+    window.dispatchEvent(new CustomEvent('auraxpress:ask-coach', { detail: { prompt } }))
+  }
+
+  async function createPlan(dimension: string, avg: number) {
+    const progress = getDimensionProgress(data!.attempts, dimension)
+    const label = DIM_LABELS[dimension]
+    setPlanStates(current => ({ ...current, [dimension]: { loading: true } }))
+
+    try {
+      const response = await fetch('/api/study-guide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan_mode: true,
+          dimension: label,
+          topic: `${label} improvement plan`,
+          verdict: `${PROGRESS_STYLES[progress.status].label}; current average ${formatScore(avg)}/5`,
+          performance_context: {
+            average: formatScore(avg),
+            trend: progress.status,
+            change: formatScore(progress.change),
+            recent_scores: progress.scores.map(formatScore),
+          },
+        }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(typeof result.error === 'string' ? result.error : 'Could not create the plan.')
+      setPlanStates(current => ({ ...current, [dimension]: { guideId: result.savedGuide?.id } }))
+    } catch (error) {
+      setPlanStates(current => ({
+        ...current,
+        [dimension]: { error: error instanceof Error ? error.message : 'Could not create the plan.' },
+      }))
+    }
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto lg:mx-0">
@@ -130,7 +201,7 @@ export default function ProgressPage() {
         {[
           { label: 'Level',         value: `${data.user.level.level} — ${data.user.level.title}`, sub: `${data.user.xp} XP total` },
           { label: 'Sessions',      value: data.totalSessions,  sub: 'All time' },
-          { label: 'Avg score',     value: `${avgOverall}/100`, sub: 'Last 20 sessions' },
+          { label: 'Avg score',     value: `${formatScore(avgOverall)}/100`, sub: 'Last 20 sessions' },
           { label: 'Streak',        value: `${data.user.streak_days}d 🔥`, sub: 'Current streak' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
@@ -144,33 +215,82 @@ export default function ProgressPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
           <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="font-semibold text-gray-700">Score by Dimension</h2>
+            <div>
+              <h2 className="font-semibold text-gray-700">Score by Dimension</h2>
+              <p className="mt-1 text-xs text-gray-400">Colors show progress over time, not the type of skill.</p>
+            </div>
             <p className="text-xs text-gray-400">Click a dimension to view its trend</p>
           </div>
-          <div className="space-y-4">
-            {Object.entries(data.dimensionAvg).map(([dim, avg]) => (
-              <button
-                key={dim}
-                type="button"
-                onClick={() => setSelectedDimension(dim)}
-                className={`block w-full rounded-xl p-2 text-left transition ${
-                  selectedDimension === dim ? 'bg-indigo-50 ring-1 ring-indigo-100' : 'hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span className={`font-semibold ${selectedDimension === dim ? 'text-indigo-700' : 'text-gray-600'}`}>{DIM_LABELS[dim]}</span>
-                  <span className="font-semibold text-gray-700">{avg}/5</span>
-                </div>
-                <div className="h-2.5 bg-gray-100 rounded-full">
-                  <div className={`h-2.5 rounded-full ${DIM_COLORS[dim]} transition-all duration-700`} style={{ width: `${(avg / 5) * 100}%` }} />
-                </div>
-              </button>
+          <div className="mb-4 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-gray-500">
+            {(['improving', 'stable', 'declining', 'insufficient'] as ProgressStatus[]).map(status => (
+              <span key={status} className="inline-flex items-center gap-1.5">
+                <span className={`h-2.5 w-2.5 rounded-full ${PROGRESS_STYLES[status].bar}`} />
+                {PROGRESS_STYLES[status].label}
+              </span>
             ))}
+          </div>
+          <div className="space-y-4">
+            {Object.entries(data.dimensionAvg).map(([dim, avg]) => {
+              const progress = getDimensionProgress(data.attempts, dim)
+              const style = PROGRESS_STYLES[progress.status]
+              const needsAction = avg < 3.5
+                || (avg < 4.75 && (progress.status === 'stable' || progress.status === 'declining'))
+              const planState = planStates[dim]
+
+              return (
+                <div
+                  key={dim}
+                  className={`rounded-xl p-3 transition ${
+                    selectedDimension === dim ? 'bg-indigo-50 ring-1 ring-indigo-100' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <button type="button" onClick={() => setSelectedDimension(dim)} className="block w-full text-left">
+                    <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className={`font-semibold ${selectedDimension === dim ? 'text-indigo-700' : 'text-gray-600'}`}>{DIM_LABELS[dim]}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${style.badge}`}>{style.label}</span>
+                      </div>
+                      <span className="shrink-0 font-semibold text-gray-700">{formatScore(avg)}/5</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-gray-100">
+                      <div className={`h-2.5 rounded-full ${style.bar} transition-all duration-700`} style={{ width: `${(avg / 5) * 100}%` }} />
+                    </div>
+                  </button>
+
+                  {needsAction && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => askAI(dim, avg)}
+                        className="rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50"
+                      >
+                        Ask AI
+                      </button>
+                      {planState?.guideId ? (
+                        <Link href={`/learning-guides?guide=${planState.guideId}`} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">
+                          View Plan
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => createPlan(dim, avg)}
+                          disabled={planState?.loading}
+                          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                        >
+                          {planState?.loading ? 'Creating…' : 'Create Plan'}
+                        </button>
+                      )}
+                      {planState?.error && <span className="text-xs text-red-500">{planState.error}</span>}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           <DimensionTrendChart
             label={DIM_LABELS[selectedDimension]}
-            color={DIM_LINE_COLORS[selectedDimension]}
+            color={PROGRESS_STYLES[selectedProgress.status].line}
             data={dimensionTrend}
           />
 
@@ -213,7 +333,7 @@ export default function ProgressPage() {
               <div key={s.title} className="flex items-center justify-between py-1">
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-gray-700 font-medium truncate">{s.title}</div>
-                  <div className="text-xs text-gray-400">{s.attempt_count} attempts · Best {s.best_score}/100</div>
+                  <div className="text-xs text-gray-400">{s.attempt_count} attempts · Best {formatScore(s.best_score)}/100</div>
                 </div>
                 <Stars count={s.mastery_stars} />
               </div>
@@ -263,13 +383,13 @@ export default function ProgressPage() {
                     <div className="text-gray-700 font-medium truncate">{a.scenario_title ?? 'Practice session'}</div>
                     <div className="text-xs text-gray-400 truncate">{a.scenario_category ?? 'Scenario'}</div>
                   </td>
-                  <td className="py-2 pr-4"><span className={`font-bold ${a.score_overall >= 70 ? 'text-green-600' : a.score_overall >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>{a.score_overall}</span></td>
-                  <td className="py-2 pr-4 text-gray-600">{a.score_clarity}</td>
-                  <td className="py-2 pr-4 text-gray-600">{a.score_fluency}</td>
-                  <td className="py-2 pr-4 text-gray-600">{a.score_vocabulary}</td>
-                  <td className="py-2 pr-4 text-gray-600">{a.score_structure}</td>
-                  <td className="py-2 pr-4 text-gray-600">{a.score_confidence}</td>
-                  <td className="py-2 pr-4 text-gray-600">{a.score_tone}</td>
+                  <td className="py-2 pr-4"><span className={`font-bold ${a.score_overall >= 70 ? 'text-green-600' : a.score_overall >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>{formatScore(a.score_overall)}</span></td>
+                  <td className="py-2 pr-4 text-gray-600">{formatScore(a.score_clarity)}</td>
+                  <td className="py-2 pr-4 text-gray-600">{formatScore(a.score_fluency)}</td>
+                  <td className="py-2 pr-4 text-gray-600">{formatScore(a.score_vocabulary)}</td>
+                  <td className="py-2 pr-4 text-gray-600">{formatScore(a.score_structure)}</td>
+                  <td className="py-2 pr-4 text-gray-600">{formatScore(a.score_confidence)}</td>
+                  <td className="py-2 pr-4 text-gray-600">{formatScore(a.score_tone)}</td>
                   <td className="py-2 pr-4 text-gray-600">{a.filler_word_count}</td>
                   <td className="py-2 pr-4 text-gray-600">{Math.round(a.words_per_minute)}</td>
                   <td className="py-2 text-indigo-600 font-medium">+{a.xp_earned}</td>
@@ -320,7 +440,7 @@ function DimensionTrendChart({
           <div className="text-xs text-gray-400">Oldest to newest, last {data.length} sessions</div>
         </div>
         <div className="text-xs font-semibold text-gray-500">
-          Latest: <span className="text-gray-800">{data[data.length - 1]?.score ?? 0}/5</span>
+          Latest: <span className="text-gray-800">{formatScore(data[data.length - 1]?.score)}/5</span>
         </div>
       </div>
       <div className="h-56">
@@ -373,7 +493,7 @@ function DimensionSvgChart({
       {data.map((point, index) => (
         <g key={`${point.session}-${point.date}`}>
           <circle cx={xFor(index)} cy={yFor(point.score)} r="5" fill="#fff" stroke={color} strokeWidth="3">
-            <title>{`Session ${point.session}: ${point.score}/5 - ${point.scenario} - ${point.date}`}</title>
+            <title>{`Session ${point.session}: ${formatScore(point.score)}/5 - ${point.scenario} - ${point.date}`}</title>
           </circle>
           {(index === 0 || index === data.length - 1) && (
             <text
@@ -418,7 +538,7 @@ function SessionDetail({ attempt, onClose }: { attempt: Attempt; onClose: () => 
 
         <div className="p-5 space-y-5">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Metric label="Overall" value={`${attempt.score_overall}/100`} />
+            <Metric label="Overall" value={`${formatScore(attempt.score_overall)}/100`} />
             <Metric label="WPM" value={Math.round(attempt.words_per_minute)} />
             <Metric label="Fillers" value={attempt.filler_word_count} />
             <Metric label="XP" value={`+${attempt.xp_earned}`} />
@@ -430,7 +550,7 @@ function SessionDetail({ attempt, onClose }: { attempt: Attempt; onClose: () => 
               {scores.map(([label, value]) => (
                 <div key={label} className="rounded-lg bg-gray-50 px-3 py-2">
                   <div className="text-xs text-gray-400">{label}</div>
-                  <div className="font-semibold text-indigo-700">{value}/5</div>
+                  <div className="font-semibold text-indigo-700">{formatScore(Number(value))}/5</div>
                 </div>
               ))}
             </div>
@@ -458,7 +578,7 @@ function SessionDetail({ attempt, onClose }: { attempt: Attempt; onClose: () => 
                   <div key={key} className="rounded-lg bg-gray-50 p-3">
                     <div className="flex justify-between gap-3 mb-1">
                       <div className="text-sm font-semibold text-gray-800">{DIM_LABELS[key] ?? key}</div>
-                      <div className="text-xs font-bold text-indigo-700">{item.score}/5</div>
+                      <div className="text-xs font-bold text-indigo-700">{formatScore(item.score)}/5</div>
                     </div>
                     <p className="text-xs text-gray-500 mb-2">{item.verdict}</p>
                     {!!item.evidence?.length && (

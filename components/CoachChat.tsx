@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface Message { role: 'user' | 'assistant'; content: string }
 
@@ -33,7 +33,7 @@ export default function CoachChat() {
     else if (messages.at(-1)?.role === 'assistant') setUnread(n => n + 1)
   }, [messages, open])
 
-  async function send(text?: string) {
+  const send = useCallback(async (text?: string) => {
     const userText = (text ?? input).trim()
     if (!userText || loading) return
     setInput('')
@@ -57,7 +57,22 @@ export default function CoachChat() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [input, loading, messages])
+
+  useEffect(() => {
+    function handleContextQuestion(event: Event) {
+      const detail = (event as CustomEvent<{ prompt?: string }>).detail
+      const prompt = detail?.prompt?.trim()
+      if (!prompt) return
+
+      setOpen(true)
+      setExpanded(true)
+      void send(prompt)
+    }
+
+    window.addEventListener('auraxpress:ask-coach', handleContextQuestion)
+    return () => window.removeEventListener('auraxpress:ask-coach', handleContextQuestion)
+  }, [send])
 
   function clearChat() {
     setMessages([])

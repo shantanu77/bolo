@@ -54,7 +54,9 @@ export async function GET() {
 
   const levelInfo = getLevelForXp(user?.xp ?? 0)
 
-  const avg = (arr: number[]) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0
+  const avg = (arr: number[]) => arr.length
+    ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 100) / 100
+    : 0
   const dimensionAvg = {
     clarity:    avg(attempts.map(a => a.score_clarity)),
     fluency:    avg(attempts.map(a => a.score_fluency)),

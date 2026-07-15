@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import LearningReview from '@/components/LearningReview'
 
 interface StudyGuide {
   title: string
@@ -37,7 +38,7 @@ function LearningGuidesContent() {
   const [selectedId, setSelectedId] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showReviewQuestion, setShowReviewQuestion] = useState(false)
+  const [reviewingGuideId, setReviewingGuideId] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -63,17 +64,14 @@ function LearningGuidesContent() {
     return () => { mounted = false }
   }, [requestedGuide])
 
-  useEffect(() => {
-    setShowReviewQuestion(false)
-  }, [selectedId])
-
   const selected = useMemo(
     () => guides.find(guide => guide.id === selectedId) ?? null,
     [guides, selectedId],
   )
-  const reviewScenarioHref = selected?.source_scenario_id
-    ? `/practice/${selected.source_scenario_id}?type=${selected.source_scenario_type === 'user' ? 'user' : 'global'}`
-    : ''
+  const reviewingGuide = useMemo(
+    () => guides.find(guide => guide.id === reviewingGuideId) ?? null,
+    [guides, reviewingGuideId],
+  )
 
   if (loading) return <div className="flex items-center justify-center h-full text-gray-400 text-sm">Loading learning guides...</div>
 
@@ -209,47 +207,29 @@ function LearningGuidesContent() {
                 )}
 
                 <div className="border-t border-gray-100 pt-4">
-                  {reviewScenarioHref ? (
-                    <Link
-                      href={reviewScenarioHref}
-                      className="block w-full rounded-xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-indigo-700"
-                    >
-                      Review my learning
-                    </Link>
-                  ) : !showReviewQuestion ? (
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => setShowReviewQuestion(true)}
-                        className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
-                      >
-                        Review my learning
-                      </button>
-                      <p className="mt-2 text-center text-xs text-gray-400">
-                        This older guide does not have the original scenario link saved.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
-                      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-500">Practice question</div>
-                      <p className="text-sm font-semibold text-gray-800">{selected.guide_json.review_question?.prompt}</p>
-                      {selected.guide_json.review_question?.expected_points?.length > 0 && (
-                        <div className="mt-3">
-                          <div className="mb-1 text-xs font-semibold text-gray-500">Your answer should include</div>
-                          <ul className="space-y-1 text-sm text-gray-600">
-                            {selected.guide_json.review_question.expected_points.map(point => (
-                              <li key={point}>- {point}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setReviewingGuideId(selected.id)}
+                    className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
+                  >
+                    Review my learning
+                  </button>
+                  <p className="mt-2 text-center text-xs text-gray-400">
+                    Answer three fresh questions by voice and receive an instant rating after each answer.
+                  </p>
                 </div>
               </div>
             </main>
           )}
         </div>
+      )}
+
+      {reviewingGuide && (
+        <LearningReview
+          guideId={reviewingGuide.id}
+          guideTitle={reviewingGuide.guide_json.title || reviewingGuide.title}
+          onClose={() => setReviewingGuideId('')}
+        />
       )}
     </div>
   )
